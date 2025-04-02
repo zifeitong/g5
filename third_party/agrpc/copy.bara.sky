@@ -1,5 +1,6 @@
 # To run workflow
-#  $ bazel run @copybara//java/com/google/copybara third_party/agrpc/copy.bara.sky --folder-dir third_party/agrpc
+#  $ bazel build //tools:copybara
+#  $ bazel-bin/tools/copybara third_party/agrpc/copy.bara.sky --folder-dir third_party/agrpc
 
 core.workflow(
     name = "default",

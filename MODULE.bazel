@@ -7,4 +7,11 @@ bazel_dep(name = "re2", version = "2024-07-02.bcr.1")
 bazel_dep(name = "rules_cc", version = "0.1.1")
 bazel_dep(name = "asio", version = "1.32.0")
 bazel_dep(name = "tcmalloc", version = "0.0.0-20250331-43fcf6e")
-bazel_dep(name = "copybara", version = "0.0.0-20240326-6485af6")
+bazel_dep(name = "rules_java", version = "8.11.0")
+
+http_jar = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_jar")
+http_jar(
+    name = "copybara",
+    sha256 = "5938f1db447c20ff9859828f3d52ce1b04dbe1da18195337f3efae5e65f1d969",
+    urls = ["https://github.com/google/copybara/releases/download/v20250224/copybara_deploy.jar"],
+)
