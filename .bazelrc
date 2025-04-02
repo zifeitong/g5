@@ -1,0 +1,15 @@
+# Enable c++23
+common --cxxopt=-std=c++23
+
+# Use LLVM toolchains
+common --action_env=BAZEL_COMPILER=clang
+common --action_env=CC=clang
+common --action_env=CXX=clang++
+common --linkopt="-fuse-ld=lld"
+
+# Enable thinLTO
+common:thin_lto --features=thin_lto
+common:thin_lto --copt=-Wno-unused-command-line-argument
+
+# Enable tcmalloc
+common --custom_malloc=@tcmalloc//tcmalloc
