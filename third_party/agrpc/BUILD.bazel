@@ -1,0 +1,19 @@
+"""Bazel build file for asio-grpc (https://github.com/Tradias/asio-grpc)."""
+
+load("@rules_cc//cc:defs.bzl", "cc_library")
+#load("@rules_license//rules:license.bzl", "license")
+
+cc_library(
+    name = "asio-grpc",
+    hdrs = glob(
+        ["**/*.hpp"],
+        exclude = ["detail/execution_unifex.hpp"],
+    ),
+    defines = ["AGRPC_STANDALONE_ASIO"],
+    features = ["parse_headers"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@asio",
+        "@grpc//:grpc++",
+    ],
+)
