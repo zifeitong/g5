@@ -1,0 +1,5 @@
+bazel-g5
+bazel-bin
+bazel-out
+bazel-src
+bazel-testlogs
