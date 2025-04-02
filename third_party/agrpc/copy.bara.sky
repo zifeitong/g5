@@ -1,0 +1,26 @@
+# To run workflow
+#  $ bazel run @copybara//java/com/google/copybara third_party/agrpc/copy.bara.sky --folder-dir third_party/agrpc
+
+core.workflow(
+    name = "default",
+    origin = git.github_origin(
+      url = "https://github.com/Tradias/asio-grpc.git",
+      ref = "v3.4.3",
+    ),
+    destination = folder.destination(),
+
+    origin_files = glob(["src/agrpc/**", "LICENSE", "README.md"]),
+    destination_files = glob(["**"], exclude = ["BUILD", "copy.bara.sky"]),
+    authoring = authoring.pass_thru("Copybara <copybara@example.com>"),
+    transformations = [
+        core.replace(
+            before = "#include <agrpc/${file}>",
+            after = "#include \"third_party/agrpc/${file}\"",
+            regex_groups = {
+                "file": ".*",
+            },
+            paths = glob(["src/agrpc/**"]),
+        ),
+        core.move("src/agrpc", ""),
+    ],
+)
