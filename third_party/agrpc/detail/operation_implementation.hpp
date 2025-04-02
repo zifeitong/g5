@@ -1,0 +1,61 @@
+// Copyright 2024 Dennis Hezel
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#ifndef AGRPC_DETAIL_OPERATION_IMPLEMENTATION_HPP
+#define AGRPC_DETAIL_OPERATION_IMPLEMENTATION_HPP
+
+#include "third_party/agrpc/detail/deallocate_on_complete.hpp"
+#include "third_party/agrpc/detail/forward.hpp"
+#include "third_party/agrpc/detail/operation_base.hpp"
+#include "third_party/agrpc/detail/operation_handle.hpp"
+#include "third_party/agrpc/detail/sender_implementation.hpp"
+
+#include "third_party/agrpc/detail/config.hpp"
+
+AGRPC_NAMESPACE_BEGIN()
+
+namespace detail
+{
+template <AllocationType AllocType, int Id, class Operation>
+void complete(Operation& operation, [[maybe_unused]] detail::OperationResult result, agrpc::GrpcContext& grpc_context)
+{
+    using Implementation = typename Operation::Implementation;
+    const auto impl = [&](auto&&... args)
+    {
+        if constexpr (Implementation::NEEDS_ON_COMPLETE)
+        {
+            operation.implementation().complete(
+                detail::OperationHandle<Operation, AllocType, Id>{operation, grpc_context},
+                static_cast<decltype(args)&&>(args)...);
+        }
+        else
+        {
+            operation.implementation().complete(grpc_context, args...);
+            operation.template complete<AllocType>(static_cast<decltype(args)&&>(args)...);
+        }
+    };
+    if constexpr (std::is_same_v<detail::GrpcTagOperationBase, typename Implementation::BaseType>)
+    {
+        impl(detail::is_ok(result));
+    }
+    else
+    {
+        impl();
+    }
+}
+}
+
+AGRPC_NAMESPACE_END
+
+#endif  // AGRPC_DETAIL_OPERATION_IMPLEMENTATION_HPP
