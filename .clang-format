@@ -1,0 +1,11 @@
+# Based on https://github.com/carbon-language/carbon-lang/blob/trunk/.clang-format
+---
+BasedOnStyle: Google
+AllowShortBlocksOnASingleLine: 'false'
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: 'false'
+DerivePointerAlignment: 'false'
+ExperimentalAutoDetectBinPacking: 'false'
+FixNamespaceComments: 'true'
+InsertBraces: 'true'
+PointerAlignment: Left
