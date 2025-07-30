@@ -1,4 +1,4 @@
-// Copyright 2024 Dennis Hezel
+// Copyright 2025 Dennis Hezel
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ class RegisterRPCHandlerOperationComplete
   public:
     using Complete = void (*)(RegisterRPCHandlerOperationComplete&) noexcept;
 
-    explicit RegisterRPCHandlerOperationComplete(Complete complete) noexcept : complete_(complete) {}
+    explicit RegisterRPCHandlerOperationComplete(Complete complete_fn) noexcept : complete_(complete_fn) {}
 
     void complete() noexcept { complete_(*this); }
 
@@ -49,8 +49,8 @@ struct RegisterRPCHandlerOperationBase : RegisterRPCHandlerOperationComplete
     using ServerRPCExecutor = typename ServerRPC::executor_type;
 
     RegisterRPCHandlerOperationBase(const ServerRPCExecutor& executor, Service& service, RPCHandler&& rpc_handler,
-                                    RegisterRPCHandlerOperationComplete::Complete complete)
-        : RegisterRPCHandlerOperationComplete{complete},
+                                    RegisterRPCHandlerOperationComplete::Complete complete_fn)
+        : RegisterRPCHandlerOperationComplete{complete_fn},
           executor_(executor),
           service_(service),
           rpc_handler_(static_cast<RPCHandler&&>(rpc_handler))

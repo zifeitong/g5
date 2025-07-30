@@ -1,4 +1,4 @@
-// Copyright 2024 Dennis Hezel
+// Copyright 2025 Dennis Hezel
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,9 @@
 
 #include "third_party/agrpc/detail/forward.hpp"
 #include "third_party/agrpc/rpc_type.hpp"
+#include <grpcpp/client_context.h>
+#include <grpcpp/completion_queue.h>
+#include <grpcpp/server_context.h>
 #include <grpcpp/support/async_stream.h>
 #include <grpcpp/support/async_unary_call.h>
 

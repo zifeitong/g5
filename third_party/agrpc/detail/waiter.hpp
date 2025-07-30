@@ -1,4 +1,4 @@
-// Copyright 2024 Dennis Hezel
+// Copyright 2025 Dennis Hezel
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -61,6 +61,10 @@ decltype(auto) get_executor_from_io_object(ExecutorOrIoObject&& exec_or_io_objec
     else if constexpr (exec::scheduler_provider<ExecutorOrIoObject>)
     {
         return exec::get_scheduler(static_cast<ExecutorOrIoObject&&>(exec_or_io_object));
+    }
+    else if constexpr (exec::scheduler<ExecutorOrIoObject>)
+    {
+        return static_cast<ExecutorOrIoObject&&>(exec_or_io_object);
     }
 #endif
     else

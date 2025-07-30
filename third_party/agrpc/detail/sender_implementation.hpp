@@ -1,4 +1,4 @@
-// Copyright 2024 Dennis Hezel
+// Copyright 2025 Dennis Hezel
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,15 +22,15 @@ AGRPC_NAMESPACE_BEGIN()
 namespace detail
 {
 template <class Initiation, class Implementation>
-auto get_stop_function_arg(const Initiation& initiation,
-                           Implementation& implementation) -> decltype(initiation.stop_function_arg(implementation))
+auto get_stop_function_arg(const Initiation& initiation, Implementation& implementation)
+    -> decltype(initiation.stop_function_arg(implementation))
 {
     return initiation.stop_function_arg(implementation);
 }
 
 template <class Initiation, class Implementation>
-auto get_stop_function_arg(const Initiation& initiation,
-                           const Implementation&) -> decltype(initiation.stop_function_arg())
+auto get_stop_function_arg(const Initiation& initiation, const Implementation&)
+    -> decltype(initiation.stop_function_arg())
 {
     return initiation.stop_function_arg();
 }

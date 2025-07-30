@@ -1,4 +1,4 @@
-// Copyright 2024 Dennis Hezel
+// Copyright 2025 Dennis Hezel
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -84,8 +84,8 @@ class [[nodiscard]] RPCHandlerSender : public detail::SenderOf<void()>
 template <class Receiver, class Signature, bool IsNotifyWhenDone>
 struct GetWaitForDoneOperationState
 {
-    using Type =
-        detail::InplaceWithFunctionWrapper<exec::connect_result_t<ManualResetEventSender<Signature>, Receiver>>;
+    using Type = detail::InplaceWithFunctionWrapper<
+        ManualResetEventOperationState<Signature, ManualResetEventTupleStorage, Receiver>>;
 };
 
 template <class Receiver, class Signature>

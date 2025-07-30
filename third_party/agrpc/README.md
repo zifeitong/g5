@@ -50,15 +50,11 @@ Asio-grpc is a C++17, header-only library. To install it, CMake (3.14+) is all t
 
 To use it, [gRPC](https://grpc.io/) and either [Boost.Asio](https://www.boost.org/doc/libs/1_86_0/doc/html/boost_asio.html) (min. 1.74.0), [standalone Asio](https://github.com/chriskohlhoff/asio) (min. 1.17.0), [libunifex](https://github.com/facebookexperimental/libunifex) or [stdexec](https://github.com/NVIDIA/stdexec) must be present and linked into your application.
 
-Officially supported compilers are GCC 8+, Clang 10+, AppleClang 15+ and latest MSVC.
+Officially supported compilers are GCC 10+, Clang 13+, AppleClang 15+ and latest MSVC.
 
 # Usage
 
-The library can be added to a CMake project using either `add_subdirectory` or `find_package`. Once set up, include the individual headers from the `agrpc` directory or the convenience header:
-
-```cpp
-#include <agrpc/asio_grpc.hpp>
-```
+The library can be added to a CMake project using either `add_subdirectory` or `find_package`. Once set up, include the individual headers from the `agrpc` directory.
 
 <details><summary><b>vcpkg</b></summary>
 <p>
@@ -138,6 +134,26 @@ If you are using conan's CMake generator then link with `asio-grpc::asio-grpc` i
 find_package(asio-grpc)
 target_link_libraries(your_app PUBLIC asio-grpc::asio-grpc)
 ```
+
+</p>
+</details>
+
+<details><summary><b>CPM</b></summary>
+<p>
+
+To use asio-grpc via [CPM.cmake](https://github.com/cpm-cmake/CPM.cmake), add it directly from GitHub:
+
+```cmake
+CPMAddPackage(
+        NAME asio-grpc
+        GITHUB_REPOSITORY Tradias/asio-grpc
+        VERSION 3.5.0
+)
+
+target_link_libraries(your_app PUBLIC asio-grpc::asio-grpc)
+```
+
+This links the Boost.Asio backend. If you're using a different backend (like standalone Asio, libunifex, or stdexec), you need to link against the corresponding target, e.g., `asio-grpc::asio-grpc-standalone-asio`.
 
 </p>
 </details>

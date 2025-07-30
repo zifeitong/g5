@@ -6,12 +6,12 @@ core.workflow(
     name = "default",
     origin = git.github_origin(
       url = "https://github.com/Tradias/asio-grpc.git",
-      ref = "v3.4.3",
+      ref = "v3.5.0",
     ),
     destination = folder.destination(),
 
     origin_files = glob(["src/agrpc/**", "LICENSE", "README.md"]),
-    destination_files = glob(["**"], exclude = ["BUILD", "copy.bara.sky"]),
+    destination_files = glob(["**"], exclude = ["BUILD", "copy.bara.sky", "BUILD.bazel"]),
     authoring = authoring.pass_thru("Copybara <copybara@example.com>"),
     transformations = [
         core.replace(

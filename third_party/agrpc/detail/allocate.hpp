@@ -1,4 +1,4 @@
-// Copyright 2024 Dennis Hezel
+// Copyright 2025 Dennis Hezel
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -71,7 +71,11 @@ class AllocationGuard
 
     ValueType& operator*() const noexcept { return *ptr_; }
 
+    ValueType* operator->() const noexcept { return std::addressof(*ptr_); }
+
     void release() noexcept { ptr_ = nullptr; }
+
+    [[nodiscard]] ValueType* get() noexcept { return std::addressof(*ptr_); }
 
     [[nodiscard]] ValueType* extract() noexcept { return std::addressof(*std::exchange(ptr_, nullptr)); }
 

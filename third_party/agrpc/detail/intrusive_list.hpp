@@ -1,4 +1,4 @@
-// Copyright 2024 Dennis Hezel
+// Copyright 2025 Dennis Hezel
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -99,21 +99,6 @@ class IntrusiveList
             tail_->list_next_ = item;
         }
         tail_ = item;
-    }
-
-    [[nodiscard]] T* pop_front() noexcept
-    {
-        auto* item = head_;
-        head_ = item->list_next_;
-        if (head_ != nullptr)
-        {
-            head_->list_prev_ = nullptr;
-        }
-        else
-        {
-            tail_ = nullptr;
-        }
-        return item;
     }
 
     void remove(T* item) noexcept
