@@ -1,0 +1,53 @@
+load("@rules_java//java:java_binary.bzl", "java_binary")
+
+java_binary(
+    name = "copybara",
+    main_class = "com.google.copybara.Main",
+    runtime_deps = ["@copybara//jar"],
+)
+
+proto_library(
+    name = "spawn_proto",
+    srcs = ["spawn.proto"],
+    deps = [
+        "@protobuf//:duration_proto",
+        "@protobuf//:timestamp_proto",
+    ],
+)
+
+cc_proto_library(
+    name = "spawn_cc_proto",
+    deps = [":spawn_proto"],
+)
+
+proto_library(
+    name = "compilation_database_proto",
+    srcs = ["compilation_database.proto"],
+)
+
+cc_proto_library(
+    name = "compilation_database_cc_proto",
+    deps = [":compilation_database_proto"],
+)
+
+cc_binary(
+    name = "bzl_execlog_to_compile_commands_json",
+    srcs = ["bzl_execlog_to_compile_commands_json.cc"],
+    deps = [
+        ":compilation_database_cc_proto",
+        ":spawn_cc_proto",
+        "@abseil-cpp//absl/flags:flag",
+        "@abseil-cpp//absl/flags:parse",
+        "@abseil-cpp//absl/log:check",
+        "@abseil-cpp//absl/log:flags",
+        "@abseil-cpp//absl/log:initialize",
+        "@abseil-cpp//absl/log:log",
+        "@protobuf//:json_util",
+        "@riegeli//riegeli/bytes:fd_reader",
+        "@riegeli//riegeli/bytes:fd_writer",
+        "@riegeli//riegeli/bytes:read_all",
+        "@riegeli//riegeli/lines:line_writing",
+        "@riegeli//riegeli/messages:parse_message",
+        "@riegeli//riegeli/zstd:zstd_reader",
+    ],
+)

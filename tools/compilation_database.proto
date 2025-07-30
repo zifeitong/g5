@@ -1,0 +1,17 @@
+edition = "2023";
+
+package g5.tools.compilation_database;
+
+// Format is defined in
+// https://clang.llvm.org/docs/JSONCompilationDatabase.html#format
+message Command {
+  string directory = 1;
+  string file = 2;
+  repeated string arguments = 3;
+  string output = 4;
+}
+
+// Wrapper for input parsing array of commands.
+message CompilationDatabase {
+  repeated Command commands = 1;
+}

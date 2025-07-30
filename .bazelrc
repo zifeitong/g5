@@ -1,6 +1,10 @@
 # Enable c++23
 common --cxxopt=-std=c++23
 
+# Enable libc++
+common --linkopt=-stdlib=libc++
+common --cxxopt=-stdlib=libc++
+
 # Use LLVM toolchains
 common --action_env=BAZEL_COMPILER=clang
 common --action_env=CC=clang

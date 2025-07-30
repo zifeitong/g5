@@ -8,6 +8,7 @@ bazel_dep(name = "rules_cc", version = "0.1.2")
 bazel_dep(name = "asio", version = "1.34.2")
 bazel_dep(name = "tcmalloc", version = "0.0.0-20250331-43fcf6e")
 bazel_dep(name = "rules_java", version = "8.12.0")
+bazel_dep(name = "riegeli", version = "0.0.0-20250706-c4d1f27")
 
 http_jar = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_jar")
 http_jar(
