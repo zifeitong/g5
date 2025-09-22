@@ -2,14 +2,16 @@
 common --cxxopt=-std=c++23
 
 # Enable libc++
-common --linkopt=-stdlib=libc++
-common --cxxopt=-stdlib=libc++
+common:libcxx  --linkopt=-stdlib=libc++
+common:libcxx  --cxxopt=-stdlib=libc++
+common:libcxx  --cxxopt=-fexperimental-library
 
 # Use LLVM toolchains
 common --action_env=BAZEL_COMPILER=clang
 common --action_env=CC=clang
 common --action_env=CXX=clang++
 common --linkopt="-fuse-ld=lld"
+common --copt=-fbracket-depth=512
 
 # Enable thinLTO
 common:thin_lto --features=thin_lto
