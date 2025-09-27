@@ -11,6 +11,7 @@ cc_binary(
     "@highway//:topology",
     "//third_party/mph",
   ],
+  cxxopts = ["-fbracket-depth=512"],
 )
 
 fdo_profile(

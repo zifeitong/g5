@@ -1,20 +1,35 @@
-bazel_dep(name = "abseil-cpp", version = "20250512.1")
+bazel_dep(name = "abseil-cpp", version = "20250814.1")
 bazel_dep(name = "google_benchmark", version = "1.9.4")
 bazel_dep(name = "googletest", version = "1.17.0")
 bazel_dep(name = "grpc", version = "1.74.0")
-bazel_dep(name = "protobuf", version = "31.1")
+bazel_dep(name = "protobuf", version = "32.1")
 bazel_dep(name = "re2", version = "2025-08-12")
-bazel_dep(name = "rules_cc", version = "0.1.4")
+bazel_dep(name = "rules_cc", version = "0.2.8")
 bazel_dep(name = "asio", version = "1.34.2")
 bazel_dep(name = "tcmalloc", version = "0.0.0-20250331-43fcf6e")
-bazel_dep(name = "rules_java", version = "8.12.0")
+archive_override(
+    module_name = "tcmalloc",
+    sha256 = "35bc60ddb12d7cd3d9b23b2959f4bb3052e0f4995f03e5737b565e7e49e4900c",
+    url = "https://github.com/google/tcmalloc/archive/12f255231938d30493186b0a037feedd70f5a1c1.zip",
+    strip_prefix = "tcmalloc-12f255231938d30493186b0a037feedd70f5a1c1",
+)
+bazel_dep(name = "rules_java", version = "8.16.1")
 bazel_dep(name = "riegeli", version = "0.0.0-20250706-c4d1f27")
 bazel_dep(name = "highway", version = "1.3.0")
 
 http_jar = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_jar")
-
 http_jar(
     name = "copybara",
     sha256 = "5938f1db447c20ff9859828f3d52ce1b04dbe1da18195337f3efae5e65f1d969",
     urls = ["https://github.com/google/copybara/releases/download/v20250224/copybara_deploy.jar"],
 )
+
+# Enable toolchains_llvm
+bazel_dep(name = "toolchains_llvm", version = "1.5.0")
+llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
+llvm.toolchain(
+    llvm_version = "21.1.0",
+)
+
+use_repo(llvm, "llvm_toolchain")
+use_repo(llvm, "llvm_toolchain_llvm")
