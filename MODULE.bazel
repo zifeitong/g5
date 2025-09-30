@@ -6,13 +6,7 @@ bazel_dep(name = "protobuf", version = "32.1")
 bazel_dep(name = "re2", version = "2025-08-12")
 bazel_dep(name = "rules_cc", version = "0.2.8")
 bazel_dep(name = "asio", version = "1.34.2")
-bazel_dep(name = "tcmalloc", version = "0.0.0-20250331-43fcf6e")
-archive_override(
-    module_name = "tcmalloc",
-    sha256 = "35bc60ddb12d7cd3d9b23b2959f4bb3052e0f4995f03e5737b565e7e49e4900c",
-    url = "https://github.com/google/tcmalloc/archive/12f255231938d30493186b0a037feedd70f5a1c1.zip",
-    strip_prefix = "tcmalloc-12f255231938d30493186b0a037feedd70f5a1c1",
-)
+bazel_dep(name = "tcmalloc", version = "0.0.0-20250927-12f2552")
 bazel_dep(name = "rules_java", version = "8.16.1")
 bazel_dep(name = "riegeli", version = "0.0.0-20250706-c4d1f27")
 bazel_dep(name = "highway", version = "1.3.0")
