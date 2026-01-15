@@ -1,4 +1,4 @@
-// Copyright 2025 Dennis Hezel
+// Copyright 2026 Dennis Hezel
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ class NoArgOperation : public detail::NoArgOperationBase
                                         }
                                         else
                                         {
-                                            return detail::get_allocator(self.handler_);
+                                            return assoc::get_associated_allocator(self.handler_);
                                         }
                                     }()};
         if AGRPC_LIKELY (!detail::is_shutdown(result))

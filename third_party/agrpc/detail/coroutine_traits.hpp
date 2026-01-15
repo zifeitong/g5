@@ -1,4 +1,4 @@
-// Copyright 2025 Dennis Hezel
+// Copyright 2026 Dennis Hezel
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@
 #ifdef AGRPC_ASIO_HAS_CO_AWAIT
 
 #include "third_party/agrpc/detail/asio_forward.hpp"
+#include "third_party/agrpc/detail/association.hpp"
 #include "third_party/agrpc/detail/co_spawn.hpp"
 #include "third_party/agrpc/detail/rethrow_first_arg.hpp"
 
@@ -47,7 +48,7 @@ struct CoroutineTraits<asio::awaitable<T, Executor>>
     static void co_spawn(const IoExecutor& io_executor, RPCHandler&, CompletionHandler& completion_handler,
                          Function&& function)
     {
-        asio::co_spawn(asio::get_associated_executor(completion_handler, io_executor),
+        asio::co_spawn(assoc::get_associated_executor(completion_handler, io_executor),
                        static_cast<Function&&>(function), detail::RethrowFirstArg{});
     }
 };

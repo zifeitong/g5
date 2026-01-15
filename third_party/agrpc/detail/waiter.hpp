@@ -1,4 +1,4 @@
-// Copyright 2025 Dennis Hezel
+// Copyright 2026 Dennis Hezel
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 
 #include "third_party/agrpc/detail/asio_forward.hpp"
 #include "third_party/agrpc/detail/asio_utils.hpp"
+#include "third_party/agrpc/detail/association.hpp"
 #include "third_party/agrpc/detail/manual_reset_event.hpp"
 
 #include "third_party/agrpc/detail/config.hpp"
@@ -69,7 +70,7 @@ decltype(auto) get_executor_from_io_object(ExecutorOrIoObject&& exec_or_io_objec
 #endif
     else
     {
-        return asio::get_associated_executor(exec_or_io_object);
+        return assoc::get_associated_executor(exec_or_io_object);
     }
 #else
     else

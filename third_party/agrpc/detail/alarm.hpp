@@ -1,4 +1,4 @@
-// Copyright 2025 Dennis Hezel
+// Copyright 2026 Dennis Hezel
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 
 #include "third_party/agrpc/detail/forward.hpp"
 #include "third_party/agrpc/detail/grpc_sender.hpp"
+#include "third_party/agrpc/detail/movable_atomic.hpp"
 #include "third_party/agrpc/detail/sender_implementation.hpp"
 
 #include "third_party/agrpc/detail/asio_macros.hpp"
@@ -43,8 +44,6 @@ AlarmInitFunction(grpc::Alarm&, const Deadline&) -> AlarmInitFunction<Deadline>;
 
 struct AlarmCancellationFunction
 {
-    grpc::Alarm& alarm_;
-
     explicit AlarmCancellationFunction(grpc::Alarm& alarm) noexcept : alarm_(alarm) {}
 
     template <class Deadline>
@@ -64,7 +63,12 @@ struct AlarmCancellationFunction
         }
     }
 #endif
+
+    grpc::Alarm& alarm_;
 };
+
+template <class Executor>
+struct MoveAlarmCancellationFunction;
 
 template <class Executor>
 struct MoveAlarmSenderImplementation
@@ -74,28 +78,58 @@ struct MoveAlarmSenderImplementation
     using BaseType = detail::GrpcTagOperationBase;
     using Alarm = agrpc::BasicAlarm<Executor>;
     using Signature = void(bool, Alarm);
-    using StopFunction = detail::AlarmCancellationFunction;
+    using StopFunction = detail::MoveAlarmCancellationFunction<Executor>;
 
     template <class OnComplete>
     void complete(OnComplete on_complete, bool ok)
     {
+        done_.store(true);
         on_complete(ok, static_cast<Alarm&&>(alarm_));
     }
 
     auto& grpc_alarm() { return alarm_.alarm_; }
 
-    Alarm alarm_;
+    agrpc::BasicAlarm<Executor> alarm_;
+    MovableAtomic<bool> done_{};
+};
+
+template <class Executor>
+struct MoveAlarmCancellationFunction
+{
+    explicit MoveAlarmCancellationFunction(MoveAlarmSenderImplementation<Executor>& impl) noexcept : impl_(impl) {}
+
+    void operator()() const
+    {
+        if (!impl_.done_.exchange(true))
+        {
+            impl_.alarm_.cancel();
+        }
+    }
+
+#ifdef AGRPC_ASIO_HAS_CANCELLATION_SLOT
+    void operator()(asio::cancellation_type type) const
+    {
+        if (static_cast<bool>(type & asio::cancellation_type::all))
+        {
+            operator()();
+        }
+    }
+#endif
+
+    MoveAlarmSenderImplementation<Executor>& impl_;
 };
 
 template <class Executor>
 struct SenderMoveAlarmSenderImplementation : MoveAlarmSenderImplementation<Executor>
 {
+    using Base = MoveAlarmSenderImplementation<Executor>;
     using Alarm = agrpc::BasicAlarm<Executor>;
     using Signature = void(Alarm);
 
     template <class OnComplete>
     void complete(OnComplete on_complete, bool ok)
     {
+        this->done_.store(true);
         if (ok)
         {
             on_complete(static_cast<Alarm&&>(this->alarm_));
@@ -113,7 +147,7 @@ struct MoveAlarmSenderInitiation
     template <class Executor>
     static auto& stop_function_arg(MoveAlarmSenderImplementation<Executor>& impl) noexcept
     {
-        return impl.grpc_alarm();
+        return impl;
     }
 
     template <class Executor>

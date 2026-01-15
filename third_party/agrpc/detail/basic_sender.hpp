@@ -1,4 +1,4 @@
-// Copyright 2025 Dennis Hezel
+// Copyright 2026 Dennis Hezel
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -238,7 +238,7 @@ class BasicSenderOperationState
             exec::set_done(static_cast<Receiver&&>(receiver()));
             return;
         }
-        auto stop_token = exec::get_stop_token(receiver());
+        auto stop_token = exec::get_stop_token(exec::get_env(receiver()));
         if (stop_token.stop_requested())
         {
             exec::set_done(static_cast<Receiver&&>(receiver()));

@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef AGRPC_DETAIL_ALLOCATION_TYPE_HPP
-#define AGRPC_DETAIL_ALLOCATION_TYPE_HPP
+#ifndef AGRPC_DETAIL_MOVABLE_ATOMIC_HPP
+#define AGRPC_DETAIL_MOVABLE_ATOMIC_HPP
+
+#include <atomic>
 
 #include "third_party/agrpc/detail/config.hpp"
 
@@ -21,14 +23,27 @@ AGRPC_NAMESPACE_BEGIN()
 
 namespace detail
 {
-enum class AllocationType
+template <class T>
+struct MovableAtomic : std::atomic<T>
 {
-    NONE,
-    LOCAL,
-    CUSTOM
+    using std::atomic<T>::atomic;
+
+    MovableAtomic(const MovableAtomic& other) = delete;
+
+    MovableAtomic(MovableAtomic&& other) noexcept : std::atomic<T>(other.load()) {}
+
+    ~MovableAtomic() = default;
+
+    MovableAtomic& operator=(const MovableAtomic& other) = delete;
+
+    MovableAtomic& operator=(MovableAtomic&& other) noexcept
+    {
+        this->store(other.load());
+        return *this;
+    }
 };
 }
 
 AGRPC_NAMESPACE_END
 
-#endif  // AGRPC_DETAIL_ALLOCATION_TYPE_HPP
+#endif  // AGRPC_DETAIL_MOVABLE_ATOMIC_HPP

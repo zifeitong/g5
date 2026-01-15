@@ -1,4 +1,4 @@
-// Copyright 2025 Dennis Hezel
+// Copyright 2026 Dennis Hezel
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,12 +16,19 @@
 #define AGRPC_DETAIL_SERVER_CALLBACK_COROUTINE_HPP
 
 #include "third_party/agrpc/detail/asio_forward.hpp"
+#include "third_party/agrpc/detail/association.hpp"
 #include "third_party/agrpc/detail/reactor_ptr.hpp"
 #include "third_party/agrpc/detail/reactor_ptr_type.hpp"
 #include "third_party/agrpc/detail/ref_counted_reactor.hpp"
 #include "third_party/agrpc/server_callback.hpp"
 #include <boost/cobalt/op.hpp>
 #include <boost/cobalt/this_coro.hpp>
+
+#ifdef AGRPC_STANDALONE_ASIO
+#include <asio/system_executor.hpp>
+#else
+#include <boost/asio/system_executor.hpp>
+#endif
 
 #include "third_party/agrpc/detail/config.hpp"
 
@@ -104,7 +111,8 @@ class ServerReactorPromiseType final : private detail::ServerReactorPromiseBase<
     template <class Service, class... Args>
     ServerReactorPromiseType(Service&& service, Args&&...)
     {
-        ReactorAccess::initialize_reactor(reactor(), asio::get_associated_executor(service), &deallocate);
+        ReactorAccess::initialize_reactor(reactor(), assoc::get_associated_executor(service, asio::system_executor{}),
+                                          &deallocate);
     }
 
     auto* get_return_object() noexcept { return reactor().get(); }

@@ -1,4 +1,4 @@
-// Copyright 2025 Dennis Hezel
+// Copyright 2026 Dennis Hezel
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -159,7 +159,7 @@ class BasicManualResetEvent<void(Args...), StorageT> : private StorageT<Args...>
                 complete_immediately(completion_handler);
                 return;
             }
-            const auto allocator = asio::get_associated_allocator(completion_handler);
+            const auto allocator = assoc::get_associated_allocator(completion_handler);
             auto ptr = detail::allocate<ManualResetEventOperation<Signature, detail::RemoveCrefT<CompletionHandler>>>(
                 allocator, static_cast<CompletionHandler&&>(completion_handler), event_);
             if (event_.store(ptr.get()))
@@ -241,7 +241,7 @@ class BasicManualResetEvent<void(Args...), StorageT> : private StorageT<Args...>
                         },
                         io_executor);
                 };
-                const auto allocator = asio::get_associated_allocator(completion_handler);
+                const auto allocator = assoc::get_associated_allocator(completion_handler);
                 auto ptr =
                     detail::allocate<ManualResetEventOperation<Signature, detail::RemoveCrefT<CompletionHandler>>>(
                         allocator, static_cast<CompletionHandler&&>(completion_handler), self_);
@@ -334,7 +334,7 @@ class ManualResetEventOperationState
   public:
     void start() noexcept
     {
-        auto stop_token = exec::get_stop_token(state_.receiver());
+        auto stop_token = exec::get_stop_token(exec::get_env(state_.receiver()));
         if (stop_token.stop_requested())
         {
             exec::set_done(static_cast<Receiver&&>(state_.receiver()));

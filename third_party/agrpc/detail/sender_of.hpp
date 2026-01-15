@@ -1,4 +1,4 @@
-// Copyright 2025 Dennis Hezel
+// Copyright 2026 Dennis Hezel
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,11 +15,13 @@
 #ifndef AGRPC_DETAIL_SENDER_OF_HPP
 #define AGRPC_DETAIL_SENDER_OF_HPP
 
-#include "third_party/agrpc/detail/execution.hpp"
-
 #include <exception>
 
 #include "third_party/agrpc/detail/config.hpp"
+
+#ifdef AGRPC_STDEXEC
+#include <stdexec/execution.hpp>
+#endif
 
 AGRPC_NAMESPACE_BEGIN()
 

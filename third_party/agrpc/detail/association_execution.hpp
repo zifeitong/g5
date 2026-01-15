@@ -1,4 +1,4 @@
-// Copyright 2025 Dennis Hezel
+// Copyright 2026 Dennis Hezel
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,15 +32,21 @@ inline constexpr bool IS_STOP_EVER_POSSIBLE_V = !exec::unstoppable_token<T>;
 template <class T>
 inline constexpr bool IS_EXECUTOR = exec::scheduler<T>;
 
+namespace assoc
+{
 template <class T, class...>
-using AssociatedExecutorT = decltype(exec::get_scheduler(std::declval<T>()));
+using associated_executor_t = decltype(exec::get_scheduler(std::declval<T>()));
 
 template <class T, class...>
-using AssociatedAllocatorT = decltype(exec::get_allocator(std::declval<T>()));
+using associated_allocator_t = decltype(exec::get_allocator(std::declval<T>()));
 
-inline const auto& get_executor = exec::get_scheduler;
+inline const auto& get_associated_executor = exec::get_scheduler;
 
-using exec::get_allocator;
+inline const auto& get_associated_allocator = exec::get_allocator;
+}
+
+template <class Executor>
+inline constexpr bool IS_INLINE_EXECUTOR = std::is_same_v<exec::inline_scheduler, Executor>;
 }  // namespace detail
 
 AGRPC_NAMESPACE_END

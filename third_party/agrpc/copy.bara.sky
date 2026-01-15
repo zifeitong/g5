@@ -6,7 +6,7 @@ core.workflow(
     name = "default",
     origin = git.github_origin(
       url = "https://github.com/Tradias/asio-grpc.git",
-      ref = "v3.5.0",
+      ref = "v3.6.0",
     ),
     destination = folder.destination(),
 

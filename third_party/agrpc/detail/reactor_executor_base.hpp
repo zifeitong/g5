@@ -1,4 +1,4 @@
-// Copyright 2025 Dennis Hezel
+// Copyright 2026 Dennis Hezel
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,9 @@
 #ifndef AGRPC_DETAIL_REACTOR_EXECUTOR_BASE_HPP
 #define AGRPC_DETAIL_REACTOR_EXECUTOR_BASE_HPP
 
+#include "third_party/agrpc/detail/asio_forward.hpp"
 #include "third_party/agrpc/detail/forward.hpp"
+#include "third_party/agrpc/detail/utility.hpp"
 
 #include "third_party/agrpc/detail/config.hpp"
 
@@ -60,6 +62,8 @@ class ReactorExecutorBase
 template <>
 class ReactorExecutorBase<void>
 {
+  protected:
+    [[nodiscard]] detail::Empty get_executor() const noexcept { return {}; }
 };
 
 struct ReactorExecutorType
@@ -70,6 +74,12 @@ struct ReactorExecutorType
 
 template <class Reactor>
 using ReactorExecutorTypeT = decltype(ReactorExecutorType::get(static_cast<Reactor*>(nullptr)));
+
+#if defined(AGRPC_STANDALONE_ASIO) || defined(AGRPC_BOOST_ASIO)
+using DefaultReactorExecutor = asio::any_io_executor;
+#else
+using DefaultReactorExecutor = void;
+#endif
 }
 
 AGRPC_NAMESPACE_END

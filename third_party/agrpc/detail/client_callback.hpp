@@ -1,4 +1,4 @@
-// Copyright 2025 Dennis Hezel
+// Copyright 2026 Dennis Hezel
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 #ifndef AGRPC_DETAIL_CLIENT_CALLBACK_HPP
 #define AGRPC_DETAIL_CLIENT_CALLBACK_HPP
 
+#include "third_party/agrpc/detail/association.hpp"
 #include "third_party/agrpc/detail/bind_allocator.hpp"
 #include "third_party/agrpc/detail/forward.hpp"
 #include "third_party/agrpc/detail/manual_reset_event.hpp"
@@ -49,16 +50,17 @@ template <class StubAsync, class Request, class Response>
 using AsyncBidiStreamingReactorFn = void (StubAsync::*)(grpc::ClientContext*,
                                                         grpc::ClientBidiReactor<Request, Response>*);
 
+#if defined(AGRPC_STANDALONE_ASIO) || defined(AGRPC_BOOST_ASIO)
 template <class CompletionHandler>
 class UnaryRequestCallback
 {
   private:
-    using WorkTracker = detail::WorkTracker<detail::AssociatedExecutorT<CompletionHandler>>;
+    using WorkTracker = detail::WorkTracker<assoc::associated_executor_t<CompletionHandler>>;
 
     struct State : WorkTracker
     {
         explicit State(CompletionHandler&& handler)
-            : WorkTracker(asio::get_associated_executor(handler)), handler_(static_cast<CompletionHandler&&>(handler))
+            : WorkTracker(assoc::get_associated_executor(handler)), handler_(static_cast<CompletionHandler&&>(handler))
         {
         }
 
@@ -82,7 +84,7 @@ class UnaryRequestCallback
         }
         else
         {
-            auto allocator = asio::get_associated_allocator(handler);
+            auto allocator = assoc::get_associated_allocator(handler);
             return std::allocate_shared<State>(allocator, static_cast<CompletionHandler&&>(handler));
         }
     }
@@ -103,20 +105,21 @@ class UnaryRequestCallback
 
             void operator()() { std::move(handler_)(std::move(status_)); }
 
-            allocator_type get_allocator() const noexcept { return asio::get_associated_allocator(handler_); }
+            allocator_type get_allocator() const noexcept { return assoc::get_associated_allocator(handler_); }
 
             CompletionHandler handler_;
             grpc::Status status_;
         };
         auto state = std::move(*storage_);
         storage_.reset();
-        auto executor = asio::get_associated_executor(state.handler_);
+        auto executor = assoc::get_associated_executor(state.handler_);
         asio::dispatch(std::move(executor), DispatchCallback{std::move(state.handler_), std::move(status)});
     }
 
   private:
     Storage storage_;
 };
+#endif
 
 #define AGRPC_STORAGE_HAS_CORRECT_OFFSET(D, E, S) \
     static_assert(decltype(std::declval<D>().E)::Storage::OFFSET == offsetof(D, S) - offsetof(D, E))

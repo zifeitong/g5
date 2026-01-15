@@ -1,4 +1,4 @@
-// Copyright 2025 Dennis Hezel
+// Copyright 2026 Dennis Hezel
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 #define AGRPC_DETAIL_REGISTER_YIELD_RPC_HANDLER_HPP
 
 #include "third_party/agrpc/detail/asio_forward.hpp"
+#include "third_party/agrpc/detail/association.hpp"
 #include "third_party/agrpc/detail/bind_allocator.hpp"
 #include "third_party/agrpc/detail/register_rpc_handler_asio_base.hpp"
 #include "third_party/agrpc/detail/rethrow_first_arg.hpp"
@@ -66,12 +67,12 @@ struct RegisterYieldRPCHandlerOperation
     void initiate()
     {
         this->increment_ref_count();
-        detail::spawn(asio::get_associated_executor(this->completion_handler(), this->get_executor()),
+        detail::spawn(assoc::get_associated_executor(this->completion_handler(), this->get_executor()),
                       [g = RefCountGuard{*this}](const auto& yield)
                       {
                           auto& self = static_cast<RegisterYieldRPCHandlerOperation&>(g.get().self_);
                           AGRPC_TRY { self.perform_request_and_repeat(yield); }
-                          AGRPC_CATCH(...) { self.set_error(std::current_exception()); }
+                          AGRPC_CATCH(const std::exception&) { self.set_error(std::current_exception()); }
                       });
     }
 
@@ -98,7 +99,7 @@ struct RegisterYieldRPCHandlerOperation
             initiate_next();
             Starter::invoke(this->rpc_handler(), rpc, factory, yield);
         }
-        AGRPC_CATCH(...) { this->set_error(std::current_exception()); }
+        AGRPC_CATCH(const std::exception&) { this->set_error(std::current_exception()); }
         if (!detail::ServerRPCContextBaseAccess::is_finished(rpc))
         {
             rpc.cancel();

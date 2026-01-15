@@ -1,4 +1,4 @@
-// Copyright 2025 Dennis Hezel
+// Copyright 2026 Dennis Hezel
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@
 #include "third_party/agrpc/detail/functional.hpp"
 #include "third_party/agrpc/detail/manual_reset_event.hpp"
 #include "third_party/agrpc/detail/waiter.hpp"
-#include "third_party/agrpc/grpc_executor.hpp"
 
 #include "third_party/agrpc/detail/config.hpp"
 

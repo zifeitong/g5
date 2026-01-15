@@ -1,4 +1,4 @@
-// Copyright 2025 Dennis Hezel
+// Copyright 2026 Dennis Hezel
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -42,15 +42,31 @@ class RegisterRPCHandlerOperationComplete
     Complete complete_;
 };
 
-template <class ServerRPC, class RPCHandler, class StopToken>
-struct RegisterRPCHandlerOperationBase : RegisterRPCHandlerOperationComplete
+template <class Env>
+class RegisterRPCHandlerOperationGetEnv
+{
+  public:
+    using GetEnv = Env (*)(RegisterRPCHandlerOperationGetEnv&) noexcept;
+
+    explicit RegisterRPCHandlerOperationGetEnv(GetEnv get_env_fn) noexcept : get_env_(get_env_fn) {}
+
+    Env get_env() noexcept { return get_env_(*this); }
+
+  private:
+    GetEnv get_env_;
+};
+
+template <class ServerRPC, class RPCHandler, class Env>
+struct RegisterRPCHandlerOperationBase : RegisterRPCHandlerOperationComplete, RegisterRPCHandlerOperationGetEnv<Env>
 {
     using Service = detail::ServerRPCServiceT<ServerRPC>;
     using ServerRPCExecutor = typename ServerRPC::executor_type;
 
     RegisterRPCHandlerOperationBase(const ServerRPCExecutor& executor, Service& service, RPCHandler&& rpc_handler,
-                                    RegisterRPCHandlerOperationComplete::Complete complete_fn)
+                                    RegisterRPCHandlerOperationComplete::Complete complete_fn,
+                                    typename RegisterRPCHandlerOperationGetEnv<Env>::GetEnv get_env_fn = nullptr)
         : RegisterRPCHandlerOperationComplete{complete_fn},
+          RegisterRPCHandlerOperationGetEnv<Env>{get_env_fn},
           executor_(executor),
           service_(service),
           rpc_handler_(static_cast<RPCHandler&&>(rpc_handler))
@@ -97,7 +113,7 @@ struct RegisterRPCHandlerOperationBase : RegisterRPCHandlerOperationComplete
     std::atomic_size_t reference_count_{};
     std::exception_ptr eptr_{};
     std::atomic_bool has_error_{};
-    detail::AtomicBoolStopContext<StopToken> stop_context_;
+    detail::AtomicBoolStopContext<exec::stop_token_of_t<Env>> stop_context_;
     RPCHandler rpc_handler_;
 };
 }

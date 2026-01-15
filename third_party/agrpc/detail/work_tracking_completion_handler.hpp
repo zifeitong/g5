@@ -1,4 +1,4 @@
-// Copyright 2025 Dennis Hezel
+// Copyright 2026 Dennis Hezel
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,19 +29,6 @@ AGRPC_NAMESPACE_BEGIN()
 
 namespace detail
 {
-template <class Executor>
-inline constexpr bool IS_INLINE_EXECUTOR = false;
-
-template <class Relationship, class Allocator>
-inline constexpr bool
-    IS_INLINE_EXECUTOR<asio::basic_system_executor<asio::execution::blocking_t::possibly_t, Relationship, Allocator>> =
-        true;
-
-template <class Relationship, class Allocator>
-inline constexpr bool
-    IS_INLINE_EXECUTOR<asio::basic_system_executor<asio::execution::blocking_t::always_t, Relationship, Allocator>> =
-        true;
-
 template <class Executor, bool = detail::IS_INLINE_EXECUTOR<Executor>>
 class WorkTracker
 {
@@ -73,7 +60,7 @@ class WorkTracker<Executor, true>
 template <class Handler, class... Args>
 void dispatch_with_args(Handler&& handler, Args&&... args)
 {
-    auto executor = asio::get_associated_executor(handler);
+    auto executor = assoc::get_associated_executor(handler);
     asio::dispatch(std::move(executor),
                    AllocatorAssociator{static_cast<Handler&&>(handler),
                                        [arg_tuple = detail::Tuple{static_cast<Args&&>(args)...}](auto&& ch) mutable
