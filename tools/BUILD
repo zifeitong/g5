@@ -1,3 +1,6 @@
+load("@protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
+load("@protobuf//bazel:proto_library.bzl", "proto_library")
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_java//java:java_binary.bzl", "java_binary")
 
 java_binary(
