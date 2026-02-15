@@ -179,8 +179,6 @@
     "https://bcr.bazel.build/modules/grpc/1.76.0.bcr.1/source.json": "2bf69a9f31b8f680f767eb434ef3f854abf47eb426f8a5caf74a59a7db4aadde",
     "https://bcr.bazel.build/modules/helly25_bzl/0.3.1/MODULE.bazel": "3a4be20f6fc13be32ad44643b8252ef5af09eee936f1d943cd4fd7867fa92826",
     "https://bcr.bazel.build/modules/helly25_bzl/0.3.1/source.json": "b129ab1828492de2c163785bbeb4065c166de52d932524b4317beb5b7f917994",
-    "https://bcr.bazel.build/modules/highway/1.3.0/MODULE.bazel": "d945527e6c1aa31e95b20a8dfaaf828bea1f18a20908373ea6c4aad98b2eadf4",
-    "https://bcr.bazel.build/modules/highway/1.3.0/source.json": "b84d9bbb3bed47b1aae0cce298a29558183b6a1e60fb99db71a1578c4da2a505",
     "https://bcr.bazel.build/modules/highwayhash/0.0.0-20240305-5ad3bf8/MODULE.bazel": "5c7f29d5bd70feff14b0f65b39584957e18e4a8d555e5a29a4c36019afbb44b9",
     "https://bcr.bazel.build/modules/highwayhash/0.0.0-20240305-5ad3bf8/source.json": "211c0937ef5f537da6c3c135d12e60927c71b380642e207e4a02b86d29c55e85",
     "https://bcr.bazel.build/modules/jq.bzl/0.1.0/MODULE.bazel": "2ce69b1af49952cd4121a9c3055faa679e748ce774c7f1fda9657f936cae902f",

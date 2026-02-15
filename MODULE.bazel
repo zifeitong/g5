@@ -9,7 +9,13 @@ bazel_dep(name = "asio", version = "1.34.2")
 bazel_dep(name = "tcmalloc", version = "0.0.0-20250927-12f2552")
 bazel_dep(name = "rules_java", version = "9.5.0")
 bazel_dep(name = "riegeli", version = "0.0.0-20250822-9f2744d")
+
 bazel_dep(name = "highway", version = "1.3.0")
+git_override(
+    module_name = "highway",
+    commit = "322d55670ca88d49e2565cd72757c5139b2b9fc1",
+    remote = "https://github.com/google/highway.git"
+)
 
 http_jar = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_jar")
 http_jar(
