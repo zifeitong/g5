@@ -28,7 +28,7 @@ http_jar(
 bazel_dep(name = "toolchains_llvm", version = "1.6.0")
 llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
 llvm.toolchain(
-    llvm_version = "21.1.0",
+    llvm_version = "21.1.8",
 )
 
 use_repo(llvm, "llvm_toolchain")
