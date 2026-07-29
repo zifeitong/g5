@@ -16,8 +16,8 @@
 #define AGRPC_DETAIL_CO_SPAWN_HPP
 
 #ifdef AGRPC_STANDALONE_ASIO
-#include <asio/co_spawn.hpp>
-#include <asio/use_awaitable.hpp>
+#include "third_party/asio/co_spawn.hpp"
+#include "third_party/asio/use_awaitable.hpp"
 #elif defined(AGRPC_BOOST_ASIO)
 #include <boost/asio/co_spawn.hpp>
 #include <boost/asio/use_awaitable.hpp>

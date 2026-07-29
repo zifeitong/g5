@@ -18,33 +18,33 @@
 #include "third_party/agrpc/detail/asio_macros.hpp"
 
 #ifdef AGRPC_STANDALONE_ASIO
-#include <asio/any_io_executor.hpp>
-#include <asio/associated_allocator.hpp>
-#include <asio/associated_executor.hpp>
-#include <asio/async_result.hpp>
-#include <asio/dispatch.hpp>
-#include <asio/error.hpp>
-#include <asio/execution/allocator.hpp>
-#include <asio/execution/blocking.hpp>
-#include <asio/execution/context.hpp>
-#include <asio/execution/mapping.hpp>
-#include <asio/execution/outstanding_work.hpp>
-#include <asio/execution/relationship.hpp>
-#include <asio/execution_context.hpp>
-#include <asio/post.hpp>
-#include <asio/query.hpp>
+#include "third_party/asio/any_io_executor.hpp"
+#include "third_party/asio/associated_allocator.hpp"
+#include "third_party/asio/associated_executor.hpp"
+#include "third_party/asio/async_result.hpp"
+#include "third_party/asio/dispatch.hpp"
+#include "third_party/asio/error.hpp"
+#include "third_party/asio/execution/allocator.hpp"
+#include "third_party/asio/execution/blocking.hpp"
+#include "third_party/asio/execution/context.hpp"
+#include "third_party/asio/execution/mapping.hpp"
+#include "third_party/asio/execution/outstanding_work.hpp"
+#include "third_party/asio/execution/relationship.hpp"
+#include "third_party/asio/execution_context.hpp"
+#include "third_party/asio/post.hpp"
+#include "third_party/asio/query.hpp"
 
 #ifdef ASIO_USE_TS_EXECUTOR_AS_DEFAULT
-#include <asio/executor_work_guard.hpp>
+#include "third_party/asio/executor_work_guard.hpp"
 #endif
 
 #ifdef AGRPC_ASIO_HAS_CANCELLATION_SLOT
-#include <asio/associated_cancellation_slot.hpp>
-#include <asio/bind_cancellation_slot.hpp>
+#include "third_party/asio/associated_cancellation_slot.hpp"
+#include "third_party/asio/bind_cancellation_slot.hpp"
 #endif
 
 #ifdef AGRPC_ASIO_HAS_IMMEDIATE_EXECUTOR
-#include <asio/associated_immediate_executor.hpp>
+#include "third_party/asio/associated_immediate_executor.hpp"
 #endif
 #elif defined(AGRPC_BOOST_ASIO)
 #include <boost/asio/any_io_executor.hpp>

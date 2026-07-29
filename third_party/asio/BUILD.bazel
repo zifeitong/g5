@@ -1,0 +1,18 @@
+"""Bazel build file for standalone Asio (https://github.com/chriskohlhoff/asio)."""
+
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+cc_library(
+    name = "asio",
+    srcs = [
+        "src/asio.cpp",
+        "src/asio_ssl.cpp",
+    ],
+    hdrs = glob([
+        "**/*.hpp",
+        "**/*.ipp",
+    ]),
+    local_defines = ["ASIO_SEPARATE_COMPILATION"],
+    visibility = ["//visibility:public"],
+    deps = ["@boringssl//:ssl"],
+)

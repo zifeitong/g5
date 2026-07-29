@@ -6,7 +6,7 @@ core.workflow(
     name = "default",
     origin = git.github_origin(
       url = "https://github.com/Tradias/asio-grpc.git",
-      ref = "v3.6.1",
+      ref = "v3.7.0",
     ),
     destination = folder.destination(),
 
@@ -15,9 +15,10 @@ core.workflow(
     authoring = authoring.pass_thru("Copybara <copybara@example.com>"),
     transformations = [
         core.replace(
-            before = "#include <agrpc/${file}>",
-            after = "#include \"third_party/agrpc/${file}\"",
+            before = "#include <${dep}/${file}>",
+            after = "#include \"third_party/${dep}/${file}\"",
             regex_groups = {
+                "dep": "agrpc|asio",
                 "file": ".*",
             },
             paths = glob(["src/agrpc/**"]),

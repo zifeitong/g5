@@ -25,7 +25,7 @@
 #include <boost/cobalt/this_coro.hpp>
 
 #ifdef AGRPC_STANDALONE_ASIO
-#include <asio/system_executor.hpp>
+#include "third_party/asio/system_executor.hpp"
 #else
 #include <boost/asio/system_executor.hpp>
 #endif

@@ -36,6 +36,7 @@
 #include "third_party/agrpc/register_callback_rpc_handler.hpp"
 #include "third_party/agrpc/register_coroutine_rpc_handler.hpp"
 #include "third_party/agrpc/register_sender_rpc_handler.hpp"
+#include "third_party/agrpc/register_yield_rpc_handler.hpp"
 #include "third_party/agrpc/rpc_type.hpp"
 #include "third_party/agrpc/run.hpp"
 #include "third_party/agrpc/server_rpc.hpp"

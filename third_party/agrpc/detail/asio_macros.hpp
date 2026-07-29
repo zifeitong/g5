@@ -16,7 +16,7 @@
     !defined(AGRPC_ASIO_HAS_IMMEDIATE_EXECUTOR)
 
 #ifdef AGRPC_STANDALONE_ASIO  // standalone Asio
-#include <asio/version.hpp>
+#include "third_party/asio/version.hpp"
 
 #if (ASIO_VERSION >= 101900)
 #define AGRPC_ASIO_HAS_CANCELLATION_SLOT

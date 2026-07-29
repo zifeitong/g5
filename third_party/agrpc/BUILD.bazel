@@ -13,7 +13,7 @@ cc_library(
     features = ["parse_headers"],
     visibility = ["//visibility:public"],
     deps = [
-        "@asio",
+        "//third_party/asio",
         "@grpc//:grpc++",
     ],
 )

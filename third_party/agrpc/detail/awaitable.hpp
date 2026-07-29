@@ -15,7 +15,7 @@
 #ifndef AGRPC_ASIO_HAS_CO_AWAIT
 
 #ifdef AGRPC_STANDALONE_ASIO
-#include <asio/awaitable.hpp>
+#include "third_party/asio/awaitable.hpp"
 
 #ifdef ASIO_HAS_CO_AWAIT
 #define AGRPC_ASIO_HAS_CO_AWAIT

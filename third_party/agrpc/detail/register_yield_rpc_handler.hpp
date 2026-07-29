@@ -23,7 +23,7 @@
 #include "third_party/agrpc/grpc_context.hpp"
 
 #ifdef AGRPC_STANDALONE_ASIO
-#include <asio/spawn.hpp>
+#include "third_party/asio/spawn.hpp"
 #elif defined(AGRPC_BOOST_ASIO)
 #include <boost/asio/spawn.hpp>
 #endif

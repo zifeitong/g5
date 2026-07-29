@@ -1,0 +1,28 @@
+# To run workflow
+#  $ bazel build //tools:copybara
+#  $ bazel-bin/tools/copybara third_party/asio/copy.bara.sky --folder-dir third_party/asio
+
+core.workflow(
+    name = "default",
+    origin = git.github_origin(
+      url = "https://github.com/chriskohlhoff/asio.git",
+      ref = "asio-1-38-2",
+    ),
+    destination = folder.destination(),
+
+    origin_files = glob([
+        "include/asio/**",
+        "src/asio.cpp",
+        "src/asio_ssl.cpp",
+        "LICENSE_1_0.txt",
+    ]),
+    destination_files = glob(["**"], exclude = ["BUILD.bazel", "copy.bara.sky"]),
+    authoring = authoring.pass_thru("Copybara <copybara@example.com>"),
+    transformations = [
+        core.replace(
+            before = "include \"asio/",
+            after = "include \"third_party/asio/",
+        ),
+        core.move("include/asio", ""),
+    ],
+)
