@@ -1,4 +1,5 @@
-common:llvm_toolchain --extra_toolchains=@llvm_toolchain//:all
+# Toolchain
+common --extra_toolchains=@llvm//:all
 
 # Use C++23
 common --cxxopt=-std=c++23
