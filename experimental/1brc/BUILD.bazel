@@ -6,12 +6,17 @@ cc_binary(
     srcs = [
         "1brc.cc",
     ],
-    cxxopts = ["-fbracket-depth=512"],
+    copts = [
+        "-march=native",
+        "-O3",
+        "-mllvm",
+        "-vp-counters-per-site=4",
+        "-Wno-ignored-optimization-argument",
+        "-Wno-unused-command-line-argument",
+        "-fbracket-depth=512",
+    ],
     deps = [
         "//third_party/mph",
-        "@abseil-cpp//absl/container:flat_hash_map",
-        "@abseil-cpp//absl/log:check",
-        "@abseil-cpp//absl/strings",
         "@highway//:algo",
         "@highway//:topology",
     ],
