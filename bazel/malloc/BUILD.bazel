@@ -1,0 +1,17 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+config_setting(
+    name = "linux_opt",
+    constraint_values = ["@platforms//os:linux"],
+    values = {"compilation_mode": "opt"},
+)
+
+# Enables TCMalloc for opt build on Linux.
+cc_library(
+    name = "tcmalloc_if_linux_opt",
+    visibility = ["//visibility:public"],
+    deps = select({
+        ":linux_opt": ["@tcmalloc//tcmalloc"],
+        "//conditions:default": ["@bazel_tools//tools/cpp:malloc"],
+    }),
+)

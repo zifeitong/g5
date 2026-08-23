@@ -1,24 +1,42 @@
-# Use C++23
+# Use C++23.
 common --cxxopt=-std=c++23
 
-# Enable thinLTO
+# Allow per-platform configuration.
+common --enable_platform_specific_config
+
+# Enable thinLTO.
 common:thin_lto --features=thin_lto
 common:thin_lto --copt=-Wno-unused-command-line-argument
 
-# Sanitizer configs
+# Enable sanitizers.
 common:asan --@llvm//config:asan=true
 common:tsan --@llvm//config:tsan=true
 common:ubsan --@llvm//config:ubsan=true
 
-# Enable tcmalloc if applicable
-common --custom_malloc=@tcmalloc//tcmalloc
+# Enable TCMalloc if applicable.
+common --custom_malloc=//bazel/malloc:tcmalloc_if_linux_opt
 common:asan --custom_malloc=@bazel_tools//tools/cpp:malloc
 common:tsan --custom_malloc=@bazel_tools//tools/cpp:malloc
 
-# Enable tcmalloc
-common --custom_malloc=@tcmalloc//tcmalloc
-common:asan --custom_malloc=@bazel_tools//tools/cpp:malloc
-common:tsan --custom_malloc=@bazel_tools//tools/cpp:malloc
+# Enable bazel disk cache. Override the path or the size in user.bazelrc.
+common --disk_cache=~/.cache/bazel-build-cache
+common --experimental_disk_cache_gc_max_size=100G
+
+# Always compile PIC code.
+common --force_pic
+
+# Default dynamic linking to off.
+common --dynamic_mode=off
+
+# Force actions to have a UTF-8 language encoding.
+common --action_env=LANG=en_US.UTF-8
+
+# Enable Abseil for GoogleTest.
+common --define=absl=1
+
+# Enable libpfm for google_benchmark on Linux.
+common:linux --define=pfm=1
+
 # Disable warnings for all external compilations.
 common --per_file_copt=external/.*\.(c|cc|cpp|cxx)$@-w
 common --host_per_file_copt=external/.*\.(c|cc|cpp|cxx)$@-w
