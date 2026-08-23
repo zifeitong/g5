@@ -1,6 +1,3 @@
-# Toolchain
-common --extra_toolchains=@llvm//:all
-
 # Use C++23
 common --cxxopt=-std=c++23
 
@@ -8,9 +5,24 @@ common --cxxopt=-std=c++23
 common:thin_lto --features=thin_lto
 common:thin_lto --copt=-Wno-unused-command-line-argument
 
+# Sanitizer configs
+common:asan --@llvm//config:asan=true
+common:tsan --@llvm//config:tsan=true
+common:ubsan --@llvm//config:ubsan=true
+
+# Enable tcmalloc if applicable
+common --custom_malloc=@tcmalloc//tcmalloc
+common:asan --custom_malloc=@bazel_tools//tools/cpp:malloc
+common:tsan --custom_malloc=@bazel_tools//tools/cpp:malloc
+
 # Enable tcmalloc
 common --custom_malloc=@tcmalloc//tcmalloc
-
+common:asan --custom_malloc=@bazel_tools//tools/cpp:malloc
+common:tsan --custom_malloc=@bazel_tools//tools/cpp:malloc
 # Disable warnings for all external compilations.
 common --per_file_copt=external/.*\.(c|cc|cpp|cxx)$@-w
 common --host_per_file_copt=external/.*\.(c|cc|cpp|cxx)$@-w
+
+# Allow users to override any of the flags desired by importing a user-specific
+# RC file here if present.
+try-import %workspace%/user.bazelrc
