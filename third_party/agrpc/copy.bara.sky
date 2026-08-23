@@ -11,7 +11,7 @@ core.workflow(
     destination = folder.destination(),
 
     origin_files = glob(["src/agrpc/**", "LICENSE", "README.md"]),
-    destination_files = glob(["**"], exclude = ["BUILD", "copy.bara.sky", "BUILD.bazel"]),
+    destination_files = glob(["**"], exclude = ["BUILD.bazel", "copy.bara.sky"]),
     authoring = authoring.pass_thru("Copybara <copybara@example.com>"),
     transformations = [
         core.replace(
