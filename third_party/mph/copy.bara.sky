@@ -1,0 +1,31 @@
+# To run workflow
+#  $ bazel build //tools:copybara
+#  $ bazel-bin/tools/copybara third_party/mph/copy.bara.sky --folder-dir third_party/mph
+
+core.workflow(
+    name = "default",
+    origin = git.github_origin(
+      url = "https://github.com/qlibs/mph.git",
+      ref = "d6e79cd3970f54844c790ca0fd2cf5be50024834",
+    ),
+    destination = folder.destination(),
+
+    origin_files = glob(["mph", ".github/LICENSE"]),
+    destination_files = glob(["**"], exclude = ["BUILD.bazel", "copy.bara.sky"]),
+    authoring = authoring.pass_thru("Copybara <copybara@example.com>"),
+    transformations = [
+        # Local patch: libc++ does not implement <experimental/simd>, so gate
+        # every use of it on __GLIBCXX__. Drop this once libc++ implements it
+        # (or we stop using libc++).
+        core.replace(
+            before = "#if not __has_include(<experimental/simd>)",
+            after = "#if not (__GLIBCXX__ && __has_include(<experimental/simd>))",
+        ),
+        core.replace(
+            before = "#if __has_include(<experimental/simd>)",
+            after = "#if __GLIBCXX__ && __has_include(<experimental/simd>)",
+        ),
+        core.move("mph", "mph.h"),
+        core.move(".github/LICENSE", "LICENSE"),
+    ],
+)
