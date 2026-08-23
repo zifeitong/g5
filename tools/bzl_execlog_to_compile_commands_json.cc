@@ -3,6 +3,7 @@
 #include <filesystem>
 
 #include "absl/container/flat_hash_map.h"
+#include "absl/container/node_hash_map.h"
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/log/check.h"
@@ -65,7 +66,8 @@ std::vector<Command> ParseExecLog(std::string_view execlog) {
   riegeli::ZstdReader<riegeli::FdReader<>> reader(riegeli::Maker(execlog));
 
   absl::flat_hash_map<uint32_t, std::string> files;
-  absl::flat_hash_map<uint32_t, std::vector<std::string>> source_files;
+  absl::node_hash_map<uint32_t, std::vector<std::string>>
+      source_files;  // use node_hash_map for value pointer stability.
 
   bazel::ExecLogEntry log_entry;
   std::vector<Command> commands;
@@ -120,26 +122,36 @@ std::vector<Command> ParseExecLog(std::string_view execlog) {
     commands.push_back(std::move(command));
   }
 
+  CHECK(reader.VerifyEndAndClose()) << reader.status();
   return commands;
 }
 
 }  // namespace
 
 int main(int argc, char* argv[]) {
-  absl::InitializeLog();
   absl::ParseCommandLine(argc, argv);
+  absl::InitializeLog();
+
+  const std::string execlog = absl::GetFlag(FLAGS_execlog);
+  QCHECK(!execlog.empty()) << "--execlog is required";
+  const std::string compile_commands_json =
+      absl::GetFlag(FLAGS_compile_commands_json);
+  QCHECK(!compile_commands_json.empty())
+      << "--compile_commands_json is required";
 
   absl::flat_hash_map<std::string, Command> commands =
-      ParseCompilationDatabase(absl::GetFlag(FLAGS_compile_commands_json));
+      ParseCompilationDatabase(compile_commands_json);
 
-  for (auto& command : ParseExecLog(absl::GetFlag(FLAGS_execlog))) {
+  for (auto& command : ParseExecLog(execlog)) {
     commands.emplace(absl::StrCat(command.directory(), command.file()),
                      std::move(command));
   }
 
-  riegeli::FdWriter<> writer(absl::GetFlag(FLAGS_compile_commands_json));
+  riegeli::FdWriter<> writer(compile_commands_json);
+  QCHECK(writer.ok()) << writer.status();
+
   riegeli::WriteLine("[", writer);
-  int count = 0;
+  size_t count = 0;
   for (const auto& [_, command] : commands) {
     std::string json_string;
     CHECK_OK(
@@ -153,5 +165,6 @@ int main(int argc, char* argv[]) {
     ++count;
   }
   riegeli::WriteLine("]", writer);
-  writer.Close();
+
+  QCHECK(writer.Close()) << writer.status();
 }
