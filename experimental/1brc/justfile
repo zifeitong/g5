@@ -1,5 +1,5 @@
 build:
-  bazel build -c opt //experimental/1brc --fdo_instrument=./
+  bazel build -c opt //experimental/1brc --@llvm//config:profile=true
   ../../bazel-bin/experimental/1brc/1brc > /dev/null
   llvm-profdata merge *.profraw -o fdo.profdata
   rm *.profraw
