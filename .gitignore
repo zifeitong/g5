@@ -1,5 +1,14 @@
-bazel-g5
-bazel-bin
-bazel-out
-bazel-src
-bazel-testlogs
+# Bazel
+/bazel-*
+/user.bazelrc
+
+# Clangd
+/.cache/clangd
+/compile_commands.json
+
+# Editor
+*~
+\#*\#
+.*.sw[a-p]
+.swp
+.claude
