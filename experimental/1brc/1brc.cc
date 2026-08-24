@@ -163,16 +163,16 @@ int main(int argc, char *agrv[]) {
                 // hangs off the chain instead of extending it.
                 uint64_t w;
                 __builtin_memcpy(&w, data + p1 + 1, sizeof(w));
-                const int64_t sgn = (static_cast<int64_t>(~w) << 59) >> 63;
+                // All ones when the value is positive, zero when it starts
+                // with '-'; doubles as the mask that drops the sign byte.
+                const uint64_t pos = static_cast<uint64_t>(
+                    (static_cast<int64_t>(w) << 59) >> 63);
                 const uint64_t digits =
-                    ((w & ~static_cast<uint64_t>(sgn & 0xFF))
-                     << (48 - 8 * (p2 - p1))) &
+                    ((w & (pos | ~0xFFULL)) << (48 - 8 * (p2 - p1))) &
                     0x0F000F0F00ULL;
                 const uint64_t absv =
                     ((digits * 0x640a0001ULL) >> 32) & 0x3FFULL;
-                const int val = static_cast<int>(
-                    (absv ^ static_cast<uint64_t>(sgn)) -
-                    static_cast<uint64_t>(sgn));
+                const int val = static_cast<int>(pos - (absv ^ pos));
 
                 rec.max = std::max(rec.max, val);
                 rec.min = std::max(rec.min, -val);
