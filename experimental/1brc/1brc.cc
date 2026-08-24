@@ -61,6 +61,9 @@ static std::size_t city_count();
 int main(int argc, char *agrv[]) {
   auto tik = Clock::now();
 
+  // All SMT threads: the record loop runs at ~2 IPC per thread, and the
+  // sibling threads fill the core's remaining issue slots (~25% faster
+  // than one thread per physical core).
   const auto n_threads = std::thread::hardware_concurrency();
 
   hwy::LogicalProcessorSet lps;
@@ -102,23 +105,31 @@ int main(int argc, char *agrv[]) {
 
             Record *const recs = records[tid].data();
 
-            for (;;) {
-              if (data >= end) {
-                break;
-              }
-
+            // Consumes one 64 byte window at `p` and advances it past the
+            // last complete record, or to `pend` when the data runs out.
+            // Note: manually interleaving two cursors here was tried and is
+            // not a win — the SMT sibling thread already fills the idle
+            // issue slots, so extra instructions only slow things down.
+            const auto step = [&](const char *&p, const char *pend) {
               // Separator and newline positions as bit masks over the
               // window. Keeping them in general purpose registers lets the
               // loop below walk records with `blsr`, so nothing on the
               // loop-carried dependency chain touches memory.
-              uint64_t eols = WindowMask(data, broadcasted_nl);
+              uint64_t eols = WindowMask(p, broadcasted_nl);
               if (eols == 0) {
                 // A window without a newline holds no complete record, and a
                 // record never spans one: this is the end of the data.
-                break;
+                p = pend;
+                return;
               }
-              uint64_t seps = WindowMask(data, broadcasted);
+              if (static_cast<size_t>(pend - p) < kWindow) {
+                // Final window: drop records past the boundary newline at
+                // `pend`; they belong to the next stream's range.
+                eols &= ~0ULL >> (kWindow - 1 - (pend - p));
+              }
+              uint64_t seps = WindowMask(p, broadcasted);
 
+              const char *data = p;
               size_t start = 0;
               do {
                 const size_t p1 = hwy::Num0BitsBelowLS1Bit_Nonzero64(seps);
@@ -151,8 +162,10 @@ int main(int argc, char *agrv[]) {
                 start = p2 + 1;
               } while (eols);
 
-              data += start;
-            }
+              p += start;
+            };
+
+            while (data < end) step(data, end);
           },
           data, end});
       data = end + 1;
