@@ -5,8 +5,10 @@
 #include <algorithm>
 #include <array>
 #include <chrono>
+#include <cstdint>
 #include <format>
 #include <iostream>
+#include <limits>
 #include <string_view>
 #include <thread>
 #include <vector>
@@ -56,8 +58,14 @@ int main(int argc, char *agrv[]) {
   const char *data = reinterpret_cast<const char *>(
       mmap(nullptr, file_size, PROT_READ, MAP_PRIVATE, fd, 0));
 
-  std::vector<std::vector<Record>> records(n_threads,
-                                           std::vector<Record>{city_count()});
+  // Min/max start at their identity values; zero-initialized records would
+  // silently report 0 for a city whose readings never cross zero. The `min`
+  // field accumulates max(-value), so its identity is INT_MIN as well.
+  std::vector<std::vector<Record>> records(
+      n_threads,
+      std::vector<Record>(city_count(),
+                          Record{0, 0, std::numeric_limits<int>::min(),
+                                 std::numeric_limits<int>::min()}));
   size_t chunk_size = file_size / n_threads;
 
   {
@@ -66,7 +74,7 @@ int main(int argc, char *agrv[]) {
     const char *file_end = data + file_size;
     for (int tid = 0; tid < n_threads; ++tid) {
       end = data + chunk_size;
-      while ((*end != '\n') && (end < file_end))
+      while ((end < file_end) && (*end != '\n'))
         ++end;
 
       threads.emplace_back(std::jthread{
@@ -135,11 +143,17 @@ int main(int argc, char *agrv[]) {
     }
   }
 
-  // Gather results from all the threads.
+  // Gather results from all the threads. Sums are merged in 64 bits: the
+  // per-thread int32 sums cannot overflow, but the merged total of ~2.4M
+  // readings per city has under 2.2x headroom in tenths of a degree.
+  std::vector<int64_t> sums(city_count());
+  for (int j = 0; j < records[0].size(); ++j) {
+    sums[j] = records[0][j].sum;
+  }
   for (int i = 1; i < records.size(); ++i) {
     for (int j = 0; j < records[0].size(); ++j) {
       records[0][j].count += records[i][j].count;
-      records[0][j].sum += records[i][j].sum;
+      sums[j] += records[i][j].sum;
       records[0][j].max = std::max(records[0][j].max, records[i][j].max);
       records[0][j].min = std::max(records[0][j].min, records[i][j].min);
     }
@@ -153,16 +167,16 @@ int main(int argc, char *agrv[]) {
     const auto &name = city_name(i);
     if (is_first) {
       std::cout << std::format("{}={:.1f}/{:.1f}/{:.1f}", name, -rec.min / 10.0,
-                               rec.sum / 10.0 / rec.count, rec.max / 10.0);
+                               sums[i] / 10.0 / rec.count, rec.max / 10.0);
       is_first = false;
     } else {
       std::cout << std::format(", {}={:.1f}/{:.1f}/{:.1f}", name,
-                               -rec.min / 10.0, rec.sum / 10.0 / rec.count,
+                               -rec.min / 10.0, sums[i] / 10.0 / rec.count,
                                rec.max / 10.0);
     }
   }
 
-  std::cout << "}" << std::endl;
+  std::cout << "}\n";
 
   auto tok = Clock::now();
   std::cerr << "Time used: " << std::chrono::duration<double>(tok - tik)
