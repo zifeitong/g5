@@ -83,6 +83,8 @@ int main(int argc, char *agrv[]) {
             lps.Set(tid);
             hwy::SetThreadAffinity(lps);
 
+            Record *const recs = records[tid].data();
+
             for (;;) {
               if (data >= end) {
                 break;
@@ -106,7 +108,7 @@ int main(int argc, char *agrv[]) {
               }
 
               for (; pos >= 0; pos = FindFirstTrue(kTag, mask)) {
-                auto &rec = records[tid][city_id(data, pos)];
+                auto &rec = recs[city_id(data, pos)];
                 data += pos + 1;
                 size_t offset = pos + 1;
 
