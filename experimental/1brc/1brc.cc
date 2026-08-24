@@ -118,6 +118,15 @@ int main(int argc, char* agrv[]) {
 
             const std::span<Record> recs = records[tid];
 
+            // A Record is one 128-bit vector {sum, count, min, max}; merge
+            // masks let a single broadcast of the value drive all four lanes.
+            const hn::FixedTag<int32_t, 4> d4;
+            const auto k_count = Dup128MaskFromMaskBits(d4, 0b0010);
+            const auto k_sum_count = Dup128MaskFromMaskBits(d4, 0b0011);
+            const auto k_min = Dup128MaskFromMaskBits(d4, 0b0100);
+            const auto k_max = Dup128MaskFromMaskBits(d4, 0b1000);
+            const auto ones = Set(d4, 1);
+
             // Consumes one 64 byte window at `p` and advances it past the
             // last complete record, or to `pend` when the data runs out.
             // Note: manually interleaving two cursors here was tried and is
@@ -168,10 +177,13 @@ int main(int argc, char* agrv[]) {
                     ((digits * 0x640a0001ULL) >> 32) & 0x3FFULL;
                 const int val = static_cast<int>(pos - (absv ^ pos));
 
-                rec.max = std::max(rec.max, val);
-                rec.min = std::min(rec.min, val);
-                rec.sum += val;
-                rec.count += 1;
+                auto q = Set(d4, val);
+                q = IfThenElse(k_count, ones, q);
+                auto r = LoadU(d4, reinterpret_cast<const int32_t*>(&rec));
+                r = MaskedAddOr(r, k_sum_count, r, q);
+                r = MaskedMinOr(r, k_min, r, q);
+                r = MaskedMaxOr(r, k_max, r, q);
+                StoreU(r, d4, reinterpret_cast<int32_t*>(&rec));
                 start = p2 + 1;
               } while (eols);
 
