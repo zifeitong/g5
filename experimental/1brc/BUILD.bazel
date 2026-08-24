@@ -17,7 +17,7 @@ cc_binary(
     ],
     deps = [
         "//third_party/mph",
-        "@highway//:algo",
+        "@highway//:hwy",
         "@highway//:topology",
     ],
 )

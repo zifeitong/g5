@@ -13,7 +13,7 @@
 #include <thread>
 #include <vector>
 
-#include "hwy/contrib/algo/find-inl.h"
+#include "hwy/highway.h"
 #include "hwy/contrib/thread_pool/topology.h"
 #include "third_party/mph/mph.h"
 
@@ -22,8 +22,25 @@ namespace hn = hwy::HWY_NAMESPACE;
 using std::literals::operator""sv;
 using Clock = std::chrono::high_resolution_clock;
 
-const hn::ScalableTag<uint8_t> kTag;
+// Records are scanned a 64 byte window at a time; the window is the unit the
+// inner loop walks with 64 bit masks, so it is independent of the vector
+// width. `BitsFromMask` needs at most 64 lanes, hence the cap.
+constexpr size_t kWindow = 64;
+const hn::CappedTag<uint8_t, kWindow> kTag;
 const auto broadcasted = Set(kTag, ';');
+const auto broadcasted_nl = Set(kTag, '\n');
+
+// Positions of `c` inside the 64 byte window at `p`, one bit per byte.
+static HWY_INLINE uint64_t WindowMask(const char *p,
+                                      hn::VFromD<decltype(kTag)> c) {
+  const size_t lanes = hn::Lanes(kTag);
+  uint64_t bits = 0;
+  for (size_t off = 0; off < kWindow; off += lanes) {
+    const auto v = LoadU(kTag, reinterpret_cast<const uint8_t *>(p + off));
+    bits |= BitsFromMask(kTag, Eq(c, v)) << off;
+  }
+  return bits;
+}
 
 struct Record {
   int sum;
@@ -90,39 +107,36 @@ int main(int argc, char *agrv[]) {
                 break;
               }
 
-              auto mask =
-                  Eq(broadcasted,
-                     LoadU(kTag, reinterpret_cast<const uint8_t *>(data)));
-
-              auto pos = FindFirstTrue(kTag, mask);
-              if (pos < 0) {
-                // Probe one more vector to find the end of city name.
-                mask = Eq(broadcasted,
-                          LoadU(kTag, reinterpret_cast<const uint8_t *>(
-                                          data + hn::Lanes(kTag))));
-                pos = FindFirstTrue(kTag, mask);
-                if (pos < 0) {
-                  break;
-                }
-                pos += hn::Lanes(kTag);
+              // Separator and newline positions as bit masks over the
+              // window. Keeping them in general purpose registers lets the
+              // loop below walk records with `blsr`, so nothing on the
+              // loop-carried dependency chain touches memory.
+              uint64_t eols = WindowMask(data, broadcasted_nl);
+              if (eols == 0) {
+                // A window without a newline holds no complete record, and a
+                // record never spans one: this is the end of the data.
+                break;
               }
+              uint64_t seps = WindowMask(data, broadcasted);
 
-              for (; pos >= 0; pos = FindFirstTrue(kTag, mask)) {
-                auto &rec = recs[city_id(data, pos)];
+              size_t start = 0;
+              do {
+                const size_t p1 = hwy::Num0BitsBelowLS1Bit_Nonzero64(seps);
+                seps &= seps - 1;
+                const size_t p2 = hwy::Num0BitsBelowLS1Bit_Nonzero64(eols);
+                eols &= eols - 1;
 
-                // Branchless parse of "[-]d[d].d". The '.' is the lowest of
-                // bytes 1..3 without bit 4 set (digits all have it; a '-'
-                // can only be byte 0, and the '\n' comes after the '.').
-                // Shift the digits to fixed positions and multiply-
-                // accumulate them into tenths; the sign comes from bit 4 of
-                // the first byte, '-' being the only first byte without it.
+                auto &rec = recs[city_id(data + start, p1 - start)];
+
+                // Branchless parse of "[-]d[d].d". The digit positions follow
+                // from the separator and newline offsets, so this whole block
+                // hangs off the chain instead of extending it.
                 uint64_t w;
-                __builtin_memcpy(&w, data + pos + 1, sizeof(w));
-                const int dot = __builtin_ctzll(~w & 0x10101000ULL);
+                __builtin_memcpy(&w, data + p1 + 1, sizeof(w));
                 const int64_t sgn = (static_cast<int64_t>(~w) << 59) >> 63;
                 const uint64_t digits =
                     ((w & ~static_cast<uint64_t>(sgn & 0xFF))
-                     << (28 - dot)) &
+                     << (48 - 8 * (p2 - p1))) &
                     0x0F000F0F00ULL;
                 const uint64_t absv =
                     ((digits * 0x640a0001ULL) >> 32) & 0x3FFULL;
@@ -130,16 +144,14 @@ int main(int argc, char *agrv[]) {
                     (absv ^ static_cast<uint64_t>(sgn)) -
                     static_cast<uint64_t>(sgn));
 
-                const size_t offset = pos + 1 + (dot >> 3) + 3;
-                data += offset;
-
                 rec.max = std::max(rec.max, val);
                 rec.min = std::max(rec.min, -val);
                 rec.sum += val;
                 rec.count += 1;
+                start = p2 + 1;
+              } while (eols);
 
-                mask = SlideMaskDownLanes(kTag, mask, offset);
-              }
+              data += start;
             }
           },
           data, end});
@@ -642,7 +654,8 @@ static constexpr auto _table = []() consteval {
   size_t i = 0;
   for (auto &v : values) {
     auto name = _names[i++];
-    if (name.size() > 2 * hn::Lanes(kTag)) {
+    // A whole record must fit in one window: name, ';', "-99.9" and '\n'.
+    if (name.size() + 7 > kWindow) {
       throw "City name too long";
     }
     v = o1hash(name.data(), name.size());
