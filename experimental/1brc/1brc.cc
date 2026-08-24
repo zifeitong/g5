@@ -98,12 +98,11 @@ int main(int argc, char *agrv[]) {
            fd, 0));
 
   // Min/max start at their identity values; zero-initialized records would
-  // silently report 0 for a city whose readings never cross zero. The `min`
-  // field accumulates max(-value), so its identity is INT_MIN as well.
+  // silently report 0 for a city whose readings never cross zero.
   std::vector<std::vector<Record>> records(
       n_threads,
       std::vector<Record>(city_count(),
-                          Record{0, 0, std::numeric_limits<int>::min(),
+                          Record{0, 0, std::numeric_limits<int>::max(),
                                  std::numeric_limits<int>::min()}));
   size_t chunk_size = file_size / n_threads;
 
@@ -123,6 +122,15 @@ int main(int argc, char *agrv[]) {
             hwy::SetThreadAffinity(lps);
 
             Record *const recs = records[tid].data();
+
+            // A Record is one 128-bit vector {sum, count, min, max}; merge
+            // masks let a single broadcast of the value drive all four lanes.
+            const hn::FixedTag<int32_t, 4> d4;
+            const auto k_count = Dup128MaskFromMaskBits(d4, 0b0010);
+            const auto k_sum_count = Dup128MaskFromMaskBits(d4, 0b0011);
+            const auto k_min = Dup128MaskFromMaskBits(d4, 0b0100);
+            const auto k_max = Dup128MaskFromMaskBits(d4, 0b1000);
+            const auto ones = Set(d4, 1);
 
             // Consumes one 64 byte window at `p` and advances it past the
             // last complete record, or to `pend` when the data runs out.
@@ -174,10 +182,13 @@ int main(int argc, char *agrv[]) {
                     ((digits * 0x640a0001ULL) >> 32) & 0x3FFULL;
                 const int val = static_cast<int>(pos - (absv ^ pos));
 
-                rec.max = std::max(rec.max, val);
-                rec.min = std::max(rec.min, -val);
-                rec.sum += val;
-                rec.count += 1;
+                auto q = Set(d4, val);
+                q = IfThenElse(k_count, ones, q);
+                auto r = LoadU(d4, reinterpret_cast<const int32_t *>(&rec));
+                r = MaskedAddOr(r, k_sum_count, r, q);
+                r = MaskedMinOr(r, k_min, r, q);
+                r = MaskedMaxOr(r, k_max, r, q);
+                StoreU(r, d4, reinterpret_cast<int32_t *>(&rec));
                 start = p2 + 1;
               } while (eols);
 
@@ -203,7 +214,7 @@ int main(int argc, char *agrv[]) {
       records[0][j].count += records[i][j].count;
       sums[j] += records[i][j].sum;
       records[0][j].max = std::max(records[0][j].max, records[i][j].max);
-      records[0][j].min = std::max(records[0][j].min, records[i][j].min);
+      records[0][j].min = std::min(records[0][j].min, records[i][j].min);
     }
   }
 
@@ -214,12 +225,12 @@ int main(int argc, char *agrv[]) {
     const auto &rec = records[0][i];
     const auto &name = city_name(i);
     if (is_first) {
-      std::cout << std::format("{}={:.1f}/{:.1f}/{:.1f}", name, -rec.min / 10.0,
+      std::cout << std::format("{}={:.1f}/{:.1f}/{:.1f}", name, rec.min / 10.0,
                                sums[i] / 10.0 / rec.count, rec.max / 10.0);
       is_first = false;
     } else {
       std::cout << std::format(", {}={:.1f}/{:.1f}/{:.1f}", name,
-                               -rec.min / 10.0, sums[i] / 10.0 / rec.count,
+                               rec.min / 10.0, sums[i] / 10.0 / rec.count,
                                rec.max / 10.0);
     }
   }
