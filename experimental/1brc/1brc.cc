@@ -1,6 +1,7 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #include <algorithm>
 #include <array>
@@ -16,6 +17,10 @@
 #include "hwy/highway.h"
 #include "hwy/contrib/thread_pool/topology.h"
 #include "third_party/mph/mph.h"
+
+#ifndef MAP_NORESERVE  // Not defined on every platform; only a hint.
+#define MAP_NORESERVE 0
+#endif
 
 namespace hn = hwy::HWY_NAMESPACE;
 
@@ -75,8 +80,22 @@ int main(int argc, char *agrv[]) {
   fstat(fd, &file_stat);
 
   size_t file_size = file_stat.st_size;
+
+  // Reserve one writable page in front of the file mapping and terminate it
+  // with a newline. The name hash reads the four bytes ending at the
+  // separator, which for a three byte name reaches one byte back; the guard
+  // makes that read valid and deterministic for the very first record too.
+  // A second reserved page after the file absorbs the reads that run past
+  // the last record: the 64 byte window scan and the 8 byte value load. Its
+  // zero bytes contain no newline, so the scan loop stops there.
+  const size_t page_size = static_cast<size_t>(sysconf(_SC_PAGESIZE));
+  char *const guard = reinterpret_cast<char *>(
+      mmap(nullptr, file_size + 2 * page_size, PROT_READ | PROT_WRITE,
+           MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE, -1, 0));
+  guard[page_size - 1] = '\n';
   const char *data = reinterpret_cast<const char *>(
-      mmap(nullptr, file_size, PROT_READ, MAP_PRIVATE, fd, 0));
+      mmap(guard + page_size, file_size, PROT_READ, MAP_PRIVATE | MAP_FIXED,
+           fd, 0));
 
   // Min/max start at their identity values; zero-initialized records would
   // silently report 0 for a city whose readings never cross zero. The `min`
@@ -634,32 +653,26 @@ static constexpr uint32_t o1hash(const char *s, size_t len) {
   static_assert(HWY_IS_LITTLE_ENDIAN, "Only support little endian");
 
   if consteval {
-    if (len >= 4) {
-      uint32_t first = (std::bit_cast<uint8_t>(s[3]) << 24) +
-                       (std::bit_cast<uint8_t>(s[2]) << 16) +
-                       (std::bit_cast<uint8_t>(s[1]) << 8) +
-                       std::bit_cast<uint8_t>(s[0]),
-               last = (std::bit_cast<uint8_t>(s[len - 1]) << 24) +
-                      (std::bit_cast<uint8_t>(s[len - 2]) << 16) +
-                      (std::bit_cast<uint8_t>(s[len - 3]) << 8) +
-                      std::bit_cast<uint8_t>(s[len - 4]);
-      return first + last;
-    } else if (len) {
-      return (std::bit_cast<uint8_t>(s[0]) << 16) |
-             std::bit_cast<uint8_t>(s[len - 1]);
+    // Byte at offset i of the record, where i outside [0, len) lands on the
+    // newline that precedes the name or the separator that follows it. Both
+    // are fixed by the file format, so this matches the runtime loads.
+    const auto at = [&](int i) -> uint32_t {
+      if (i < 0) return static_cast<uint8_t>('\n');
+      if (i < static_cast<int>(len)) return std::bit_cast<uint8_t>(s[i]);
+      return static_cast<uint8_t>(';');
+    };
+    uint32_t first = 0, last = 0;
+    for (int i = 3; i >= 0; --i) {
+      first = (first << 8) | at(i);
+      last = (last << 8) | at(static_cast<int>(len) - 4 + i);
     }
+    return first + last;
   } else {
-    if (len >= 4) {
-      uint32_t first = *reinterpret_cast<const uint32_t *>(s),
-               last = *reinterpret_cast<const uint32_t *>(s + len - 4);
-      return first + last;
-    } else if (len) {
-      return (std::bit_cast<uint8_t>(s[0]) << 16) |
-             std::bit_cast<uint8_t>(s[len - 1]);
-    }
+    uint32_t first, last;
+    __builtin_memcpy(&first, s, sizeof(first));
+    __builtin_memcpy(&last, s + len - 4, sizeof(last));
+    return first + last;
   }
-
-  return 0;
 }
 
 static constexpr auto _table = []() consteval {
@@ -670,6 +683,9 @@ static constexpr auto _table = []() consteval {
     // A whole record must fit in one window: name, ';', "-99.9" and '\n'.
     if (name.size() + 7 > kWindow) {
       throw "City name too long";
+    }
+    if (name.size() < 3) {
+      throw "City name too short";
     }
     v = o1hash(name.data(), name.size());
   }
