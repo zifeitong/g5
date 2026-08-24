@@ -1,5 +1,4 @@
 #include <fcntl.h>
-#include <linux/mman.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 
@@ -55,7 +54,7 @@ int main(int argc, char *agrv[]) {
 
   size_t file_size = file_stat.st_size;
   const char *data = reinterpret_cast<const char *>(
-      mmap(nullptr, file_size, PROT_READ, MAP_PRIVATE | MAP_HUGE_1GB, fd, 0));
+      mmap(nullptr, file_size, PROT_READ, MAP_PRIVATE, fd, 0));
 
   std::vector<std::vector<Record>> records(n_threads,
                                            std::vector<Record>{city_count()});
