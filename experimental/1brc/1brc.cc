@@ -54,6 +54,16 @@ struct Record {
   int max;
 };
 
+// Clang folds compile-time mask constants into blends, which costs an extra
+// instruction per masked operation. Hiding the bits behind an empty asm keeps
+// the merge-masked forms: 7 instructions per record update instead of 12.
+static HWY_INLINE unsigned Opaque(unsigned v) {
+#if HWY_COMPILER_GCC_ACTUAL || HWY_COMPILER_CLANG
+  asm("" : "+r"(v));
+#endif
+  return v;
+}
+
 // Returns id for given city name.
 static int city_id(const char *name, size_t len);
 
@@ -126,10 +136,11 @@ int main(int argc, char *agrv[]) {
             // A Record is one 128-bit vector {sum, count, min, max}; merge
             // masks let a single broadcast of the value drive all four lanes.
             const hn::FixedTag<int32_t, 4> d4;
-            const auto k_count = Dup128MaskFromMaskBits(d4, 0b0010);
-            const auto k_sum_count = Dup128MaskFromMaskBits(d4, 0b0011);
-            const auto k_min = Dup128MaskFromMaskBits(d4, 0b0100);
-            const auto k_max = Dup128MaskFromMaskBits(d4, 0b1000);
+            const auto k_count = Dup128MaskFromMaskBits(d4, Opaque(0b0010));
+            const auto k_sum_count =
+                Dup128MaskFromMaskBits(d4, Opaque(0b0011));
+            const auto k_min = Dup128MaskFromMaskBits(d4, Opaque(0b0100));
+            const auto k_max = Dup128MaskFromMaskBits(d4, Opaque(0b1000));
             const auto ones = Set(d4, 1);
 
             // Consumes one 64 byte window at `p` and advances it past the
