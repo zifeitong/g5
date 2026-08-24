@@ -109,27 +109,29 @@ int main(int argc, char *agrv[]) {
 
               for (; pos >= 0; pos = FindFirstTrue(kTag, mask)) {
                 auto &rec = recs[city_id(data, pos)];
-                data += pos + 1;
-                size_t offset = pos + 1;
 
-                int val;
-                if (data[1] == '.') {
-                  val = data[0] * 10 + data[2] - '0' * 11;
-                  data += 4;
-                  offset += 4;
-                } else if (data[2] == '.') {
-                  if (data[0] == '-') {
-                    val = -(data[1] * 10 + data[3] - '0' * 11);
-                  } else {
-                    val = data[0] * 100 + data[1] * 10 + data[3] - '0' * 111;
-                  }
-                  data += 5;
-                  offset += 5;
-                } else {
-                  val = -(data[1] * 100 + data[2] * 10 + data[4] - '0' * 111);
-                  data += 6;
-                  offset += 6;
-                }
+                // Branchless parse of "[-]d[d].d". The '.' is the lowest of
+                // bytes 1..3 without bit 4 set (digits all have it; a '-'
+                // can only be byte 0, and the '\n' comes after the '.').
+                // Shift the digits to fixed positions and multiply-
+                // accumulate them into tenths; the sign comes from bit 4 of
+                // the first byte, '-' being the only first byte without it.
+                uint64_t w;
+                __builtin_memcpy(&w, data + pos + 1, sizeof(w));
+                const int dot = __builtin_ctzll(~w & 0x10101000ULL);
+                const int64_t sgn = (static_cast<int64_t>(~w) << 59) >> 63;
+                const uint64_t digits =
+                    ((w & ~static_cast<uint64_t>(sgn & 0xFF))
+                     << (28 - dot)) &
+                    0x0F000F0F00ULL;
+                const uint64_t absv =
+                    ((digits * 0x640a0001ULL) >> 32) & 0x3FFULL;
+                const int val = static_cast<int>(
+                    (absv ^ static_cast<uint64_t>(sgn)) -
+                    static_cast<uint64_t>(sgn));
+
+                const size_t offset = pos + 1 + (dot >> 3) + 3;
+                data += offset;
 
                 rec.max = std::max(rec.max, val);
                 rec.min = std::max(rec.min, -val);
