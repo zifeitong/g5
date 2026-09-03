@@ -10,7 +10,7 @@ bazel_dep(name = "protobuf", version = "35.1")
 bazel_dep(name = "re2", version = "2025-11-05.bcr.1")
 bazel_dep(name = "riegeli", version = "0.0.0-20250822-9f2744d")
 bazel_dep(name = "rules_cc", version = "0.2.22")
-bazel_dep(name = "rules_java", version = "9.8.0")
+bazel_dep(name = "rules_java", version = "9.9.0")
 bazel_dep(name = "tcmalloc", version = "0.0.0-20260818-15db23d")
 
 http_jar = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_jar")
