@@ -5,9 +5,9 @@
 #include <algorithm>
 #include <array>
 #include <chrono>
-#include <limits>
 #include <format>
 #include <iostream>
+#include <limits>
 #include <span>
 #include <string_view>
 #include <thread>
@@ -29,11 +29,11 @@ struct Record {
   int sum;
   int count;
   int min = std::numeric_limits<int>::min();
-  int max = std::numeric_limits<int>::min();
+  int max = std::numeric_limits<int>::max();
 };
 
 // Returns id for given city name.
-static int city_id(const char *name, size_t len);
+static int city_id(const char* name, size_t len);
 
 // Returns name for given city id.
 static std::string_view city_name(int id);
@@ -41,7 +41,7 @@ static std::string_view city_name(int id);
 // Return total number of cities.
 static std::size_t city_count();
 
-int main(int argc, char *agrv[]) {
+int main(int argc, char* agrv[]) {
   auto tik = Clock::now();
 
   const auto n_threads = std::thread::hardware_concurrency();
@@ -55,7 +55,7 @@ int main(int argc, char *agrv[]) {
   fstat(fd, &file_stat);
 
   size_t file_size = file_stat.st_size;
-  const char *data = reinterpret_cast<const char *>(
+  const char* data = reinterpret_cast<const char*>(
       mmap(nullptr, file_size, PROT_READ, MAP_PRIVATE, fd, 0));
 
   std::vector<std::vector<Record>> records(n_threads,
@@ -64,15 +64,16 @@ int main(int argc, char *agrv[]) {
 
   {
     std::vector<std::jthread> threads;
-    const char *end;
-    const char *file_end = data + file_size;
+    const char* end;
+    const char* file_end = data + file_size;
     for (int tid = 0; tid < n_threads; ++tid) {
       end = data + chunk_size;
-      while ((end < file_end) && (*end != '\n'))
+      while ((end < file_end) && (*end != '\n')) {
         ++end;
+      }
 
       threads.emplace_back(std::jthread{
-          [tid, &records](const char *data, const char *end) {
+          [tid, &records](const char* data, const char* end) {
             hwy::LogicalProcessorSet lps;
             lps.Set(tid);
             hwy::SetThreadAffinity(lps);
@@ -86,13 +87,13 @@ int main(int argc, char *agrv[]) {
 
               auto mask =
                   Eq(broadcasted,
-                     LoadU(kTag, reinterpret_cast<const uint8_t *>(data)));
+                     LoadU(kTag, reinterpret_cast<const uint8_t*>(data)));
 
               auto pos = FindFirstTrue(kTag, mask);
               if (pos < 0) {
                 // Probe one more vector to find the end of city name.
                 mask = Eq(broadcasted,
-                          LoadU(kTag, reinterpret_cast<const uint8_t *>(
+                          LoadU(kTag, reinterpret_cast<const uint8_t*>(
                                           data + hn::Lanes(kTag))));
                 pos = FindFirstTrue(kTag, mask);
                 if (pos < 0) {
@@ -102,7 +103,7 @@ int main(int argc, char *agrv[]) {
               }
 
               for (; pos >= 0; pos = FindFirstTrue(kTag, mask)) {
-                auto &rec = recs[city_id(data, pos)];
+                auto& rec = recs[city_id(data, pos)];
                 data += pos + 1;
                 size_t offset = pos + 1;
 
@@ -145,7 +146,7 @@ int main(int argc, char *agrv[]) {
       records[0][j].count += records[i][j].count;
       records[0][j].sum += records[i][j].sum;
       records[0][j].max = std::max(records[0][j].max, records[i][j].max);
-      records[0][j].min = std::max(records[0][j].min, records[i][j].min);
+      records[0][j].min = std::min(records[0][j].min, records[i][j].min);
     }
   }
 
@@ -153,15 +154,15 @@ int main(int argc, char *agrv[]) {
 
   bool is_first = true;
   for (int i = 0; i < records[0].size(); ++i) {
-    const auto &rec = records[0][i];
-    const auto &name = city_name(i);
+    const auto& rec = records[0][i];
+    const auto& name = city_name(i);
     if (is_first) {
-      std::cout << std::format("{}={:.1f}/{:.1f}/{:.1f}", name, -rec.min / 10.0,
+      std::cout << std::format("{}={:.1f}/{:.1f}/{:.1f}", name, rec.min / 10.0,
                                rec.sum / 10.0 / rec.count, rec.max / 10.0);
       is_first = false;
     } else {
       std::cout << std::format(", {}={:.1f}/{:.1f}/{:.1f}", name,
-                               -rec.min / 10.0, rec.sum / 10.0 / rec.count,
+                               rec.min / 10.0, rec.sum / 10.0 / rec.count,
                                rec.max / 10.0);
     }
   }
@@ -591,7 +592,7 @@ static constexpr auto _names = std::array{
     "İzmir"sv,
 };
 
-static constexpr uint32_t o1hash(const char *s, size_t len) {
+static constexpr uint32_t o1hash(const char* s, size_t len) {
   static_assert(HWY_IS_LITTLE_ENDIAN, "Only support little endian");
 
   if consteval {
@@ -611,8 +612,8 @@ static constexpr uint32_t o1hash(const char *s, size_t len) {
     }
   } else {
     if (len >= 4) {
-      uint32_t first = *reinterpret_cast<const uint32_t *>(s),
-               last = *reinterpret_cast<const uint32_t *>(s + len - 4);
+      uint32_t first = *reinterpret_cast<const uint32_t*>(s),
+               last = *reinterpret_cast<const uint32_t*>(s + len - 4);
       return first + last;
     } else if (len) {
       return (std::bit_cast<uint8_t>(s[0]) << 16) |
@@ -626,7 +627,7 @@ static constexpr uint32_t o1hash(const char *s, size_t len) {
 static constexpr auto _table = []() consteval {
   std::array<uint32_t, std::size(_names)> values;
   size_t i = 0;
-  for (auto &v : values) {
+  for (auto& v : values) {
     auto name = _names[i++];
     if (name.size() > 2 * hn::Lanes(kTag)) {
       throw "City name too long";
@@ -636,7 +637,7 @@ static constexpr auto _table = []() consteval {
   return values;
 }();
 
-static int city_id(const char *name, size_t len) {
+static int city_id(const char* name, size_t len) {
   return mph::lookup<_table>(o1hash(name, len));
 }
 
