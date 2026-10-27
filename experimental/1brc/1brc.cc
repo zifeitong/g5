@@ -1,13 +1,14 @@
 #include <fcntl.h>
-#include <linux/mman.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 
 #include <algorithm>
 #include <array>
 #include <chrono>
+#include <limits>
 #include <format>
 #include <iostream>
+#include <span>
 #include <string_view>
 #include <thread>
 #include <vector>
@@ -27,8 +28,8 @@ const auto broadcasted = Set(kTag, ';');
 struct Record {
   int sum;
   int count;
-  int min;
-  int max;
+  int min = std::numeric_limits<int>::min();
+  int max = std::numeric_limits<int>::min();
 };
 
 // Returns id for given city name.
@@ -55,7 +56,7 @@ int main(int argc, char *agrv[]) {
 
   size_t file_size = file_stat.st_size;
   const char *data = reinterpret_cast<const char *>(
-      mmap(nullptr, file_size, PROT_READ, MAP_PRIVATE | MAP_HUGE_1GB, fd, 0));
+      mmap(nullptr, file_size, PROT_READ, MAP_PRIVATE, fd, 0));
 
   std::vector<std::vector<Record>> records(n_threads,
                                            std::vector<Record>{city_count()});
@@ -67,7 +68,7 @@ int main(int argc, char *agrv[]) {
     const char *file_end = data + file_size;
     for (int tid = 0; tid < n_threads; ++tid) {
       end = data + chunk_size;
-      while ((*end != '\n') && (end < file_end))
+      while ((end < file_end) && (*end != '\n'))
         ++end;
 
       threads.emplace_back(std::jthread{
@@ -75,6 +76,8 @@ int main(int argc, char *agrv[]) {
             hwy::LogicalProcessorSet lps;
             lps.Set(tid);
             hwy::SetThreadAffinity(lps);
+
+            const std::span<Record> recs = records[tid];
 
             for (;;) {
               if (data >= end) {
@@ -99,7 +102,7 @@ int main(int argc, char *agrv[]) {
               }
 
               for (; pos >= 0; pos = FindFirstTrue(kTag, mask)) {
-                auto &rec = records[tid][city_id(data, pos)];
+                auto &rec = recs[city_id(data, pos)];
                 data += pos + 1;
                 size_t offset = pos + 1;
 
@@ -163,7 +166,7 @@ int main(int argc, char *agrv[]) {
     }
   }
 
-  std::cout << "}" << std::endl;
+  std::cout << "}\n";
 
   auto tok = Clock::now();
   std::cerr << "Time used: " << std::chrono::duration<double>(tok - tik)
