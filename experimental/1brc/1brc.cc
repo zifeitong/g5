@@ -28,8 +28,8 @@ const auto broadcasted = Set(kTag, ';');
 struct Record {
   int sum;
   int count;
-  int min = std::numeric_limits<int>::min();
-  int max = std::numeric_limits<int>::max();
+  int min = std::numeric_limits<int>::max();
+  int max = std::numeric_limits<int>::min();
 };
 
 // Returns id for given city name.
@@ -127,7 +127,7 @@ int main(int argc, char* agrv[]) {
                 }
 
                 rec.max = std::max(rec.max, val);
-                rec.min = std::max(rec.min, -val);
+                rec.min = std::min(rec.min, val);
                 rec.sum += val;
                 rec.count += 1;
 
