@@ -25,8 +25,8 @@ register_toolchains("@llvm//toolchain:all")
 
 # Hermetic CUDA toolkit: pinned redistributable archives staged as a single
 # toolkit-shaped tree. Pins live in //bazel/cuda/toolkit:pins.bzl.
-cuda_sdk = use_extension("//bazel/cuda/toolkit:extensions.bzl", "cuda_sdk")
-use_repo(cuda_sdk, "cuda_sdk")
+cuda_toolkit = use_extension("//bazel/cuda/toolkit:extensions.bzl", "cuda_toolkit")
+use_repo(cuda_toolkit, "cuda_toolkit")
 
 register_toolchains("//bazel/cuda/toolchain:all")
 

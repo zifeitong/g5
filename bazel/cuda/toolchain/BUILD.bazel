@@ -16,9 +16,9 @@ cuda_args(
 cuda_toolchain(
     name = "nvcc_toolchain",
     args = [":default_compile_args"],
-    headers = ["@cuda_sdk//:headers"],
-    nvcc = "@cuda_sdk//:bin/nvcc",
-    toolkit_files = ["@cuda_sdk//:toolkit_files"],
+    headers = ["@cuda_toolkit//:headers"],
+    nvcc = "@cuda_toolkit//:bin/nvcc",
+    toolkit_files = ["@cuda_toolkit//:toolkit_files"],
 )
 
 [

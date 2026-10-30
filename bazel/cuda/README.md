@@ -22,7 +22,7 @@ cc_binary(
     target_compatible_with = requires_cuda(),
     deps = [
         ":kernels",
-        "@cuda_sdk//:cudart_static",
+        "@cuda_toolkit//:cudart_static",
     ],
 )
 ```
