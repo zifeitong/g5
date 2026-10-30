@@ -1,4 +1,4 @@
-# CUDA {CUDA_VERSION}. Generated from //bazel/cuda/toolkit:toolkit.BUILD.bazel.
+# CUDA {CUDA_VERSION}. Generated from bazel/cuda/toolkit/toolkit.BUILD.bazel.
 #
 # Target semantics follow hermeticbuild/cuda-toolkit's per-component BUILD
 # templates, flattened: one repository holding a toolkit-shaped tree rather
@@ -65,20 +65,15 @@ cc_import(
     deps = [":headers"],
 )
 
-cc_import(
-    name = "cudart_shared_library",
-    shared_library = "lib/libcudart.so.{CUDART_VERSION}",
-    deps = [":headers"],
-)
-
 # nvcc's own default linkage. Leaves libcuda.so.1 as the binary's only CUDA
 # runtime dependency, so nothing has to stage libcudart.so alongside it.
 #
-# A process must contain exactly one CUDA runtime. Prefer :cudart_shared for
-# any binary that also loads an NVIDIA shared library carrying its own
-# DT_NEEDED on libcudart.so, or that dlopens a module which links the runtime
-# itself; two static copies give each half its own context and allocation
-# bookkeeping, and pointers do not cross between them.
+# A process must contain exactly one CUDA runtime, and this is the only
+# linkage offered. A binary that also loads an NVIDIA shared library carrying
+# its own DT_NEEDED on libcudart.so, or that dlopens a module linking the
+# runtime itself, would end up with two -- each half getting its own context
+# and allocation bookkeeping, with pointers not crossing between them. That
+# case needs a shared-cudart target here, over lib/libcudart.so.<version>.
 cc_library(
     name = "cudart_static",
     linkopts = ["-lrt"],
@@ -87,13 +82,5 @@ cc_library(
         ":cudadevrt_static_library",
         ":cudart_static_library",
         ":culibos_static_library",
-    ],
-)
-
-cc_library(
-    name = "cudart_shared",
-    deps = [
-        ":cuda_driver_stub",
-        ":cudart_shared_library",
     ],
 )

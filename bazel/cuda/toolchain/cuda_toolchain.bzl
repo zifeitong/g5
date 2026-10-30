@@ -1,7 +1,6 @@
 """The cuda_toolchain rule: binds nvcc + toolkit pieces into a Bazel toolchain."""
 
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
-load("//bazel/cuda/private:args_eval.bzl", "CUDA_COMPILE_ACTION_NAME", "CudaArgsInfo", "evaluate_args")
 load("//bazel/cuda/private:providers.bzl", "CudaToolchainInfo")
 
 def _single_executable(target, what):
@@ -14,17 +13,11 @@ def _single_executable(target, what):
 def _cuda_toolchain_impl(ctx):
     nvcc = _single_executable(ctx.attr.nvcc, "nvcc")
 
-    compile_args, compile_args_files = evaluate_args(
-        ctx.attr.args,
-        CUDA_COMPILE_ACTION_NAME,
-    )
-
     info = CudaToolchainInfo(
         nvcc = nvcc,
         toolkit_files = depset(ctx.files.toolkit_files + [nvcc]),
         headers = ctx.attr.headers,
-        compile_args = compile_args,
-        compile_args_files = compile_args_files,
+        compile_args = ctx.attr.compile_args,
         cuda_std = ctx.attr.cuda_std,
         host_std = ctx.attr.host_std,
         allow_unsupported_compiler = ctx.attr.allow_unsupported_compiler,
@@ -53,9 +46,8 @@ cuda_toolchain = rule(
             providers = [CcInfo],
             doc = "Toolkit headers implicitly available to every cuda_library.",
         ),
-        "args": attr.label_list(
-            providers = [CudaArgsInfo],
-            doc = "cuda_args targets bound to the cuda-compile action.",
+        "compile_args": attr.string_list(
+            doc = "Extra nvcc flags for every cuda_library.",
         ),
         "cuda_std": attr.string(
             default = "c++23",

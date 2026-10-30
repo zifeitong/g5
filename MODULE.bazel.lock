@@ -558,14 +558,14 @@
   },
   "selectedYankedVersions": {},
   "moduleExtensions": {
-    "//bazel/cuda/toolkit:extensions.bzl%cuda_toolkit": {
+    "//bazel/cuda:toolkit/repo.bzl%cuda_toolkit": {
       "general": {
-        "bzlTransitiveDigest": "yZQ5tQmApD98RKenjF5DTvbbeT/zxVn/YQPeoAj8elU=",
-        "usagesDigest": "46qHJ8J/P0KnLHsOtkuFFZ4ffNwqJW9g/f8wZUk25hc=",
+        "bzlTransitiveDigest": "aOKMH2hXiPbNNb1fVZ+LJ4kfqaK7C0eLGyrnAx+MRKI=",
+        "usagesDigest": "6jU/IcyFD32TfwR/zpIqhYqeYLSbUAOYz1kRX79mNes=",
         "recordedInputs": [],
         "generatedRepoSpecs": {
           "cuda_toolkit": {
-            "repoRuleId": "@@//bazel/cuda/toolkit:repo.bzl%cuda_toolkit_repository",
+            "repoRuleId": "@@//bazel/cuda:toolkit/repo.bzl%_cuda_toolkit_repository",
             "attributes": {}
           }
         }

@@ -132,7 +132,6 @@ def compile_cuda_object(
         transitive = [
             compilation_context.headers,
             cuda_toolchain.toolkit_files,
-            cuda_toolchain.compile_args_files,
             cc_toolchain.all_files,
         ],
     )

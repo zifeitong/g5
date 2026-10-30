@@ -1,3 +1,0 @@
-# The pinned CUDA toolkit download. See README.md in the parent package.
-
-exports_files(["toolkit.BUILD.bazel"])
