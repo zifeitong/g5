@@ -77,10 +77,7 @@ def compile_cuda_object(
     )
     host_flags = _host_compile_flags(feature_configuration, cc_toolchain)
 
-    # nvcc's EDG device frontend cannot parse libc++ 22 headers (extern
-    # template lists, removed internals CUDA's own headers rely on). Only the
-    # libstdc++ C++ standard library is supported; fail early with a pointer
-    # to the right invocation instead of surfacing hundreds of EDG errors.
+    # EDG cannot parse libc++. Fail here rather than in hundreds of errors.
     for flag in host_flags:
         if "libcxx" in flag:
             fail(
@@ -93,8 +90,7 @@ def compile_cuda_object(
     args.add("-c", src)
     args.add("-o", obj)
 
-    # The toolkit is staged as one toolkit-shaped tree, so nvcc.profile
-    # resolves cicc, libdevice, the toolkit headers and the link stubs itself.
+    # One flat toolkit tree, so nvcc.profile finds cicc, libdevice and headers.
     args.add("-ccbin=" + host_compiler)
     args.add("-std=" + cuda_toolchain.cuda_std)
     if cuda_toolchain.allow_unsupported_compiler:
@@ -102,8 +98,6 @@ def compile_cuda_object(
     args.add_all(_generate_code_flags(archs))
     args.add_all(cuda_toolchain.compile_args)
 
-    # Include paths and defines feed nvcc directly; nvcc forwards them to the
-    # host preprocessor and its own frontends.
     args.add_all(compilation_context.includes, before_each = "-I")
     args.add_all(compilation_context.quote_includes, before_each = "-I")
     args.add_all(compilation_context.system_includes, before_each = "-isystem")
@@ -111,16 +105,11 @@ def compile_cuda_object(
     args.add_all(compilation_context.defines, before_each = "-D")
     args.add_all(local_defines, before_each = "-D")
 
-    # Everything the cc_toolchain would pass to a C++ compile goes to the host
-    # compiler. -Xcompiler= keeps each flag a single token (no comma splitting).
+    # -Xcompiler= keeps each flag one token; nvcc splits on commas.
     args.add_all(host_flags, format_each = "-Xcompiler=%s")
 
-    # Then pin the host dialect, last so it wins. This is what libstdc++'s
-    # headers expand against, and it has to stay below the C++20 library code
-    # EDG cannot parse (std::atomic's __builtin_clear_padding). nvcc's own
-    # -std sets a host dialect too, but -Xcompiler flags land after it on the
-    # host command line, so this is the value that takes effect. Without the
-    # pin the floor would be whatever hermetic-llvm happens to default to.
+    # Last so it wins: -Xcompiler flags land after nvcc's own -std. Do not
+    # drop this -- it is what keeps C++20 <atomic> out of the device pass.
     args.add("-Xcompiler=-std=" + cuda_toolchain.host_std)
 
     args.add_all(copts)

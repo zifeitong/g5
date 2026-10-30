@@ -51,22 +51,14 @@ cuda_toolchain = rule(
         ),
         "cuda_std": attr.string(
             default = "c++23",
-            doc = "C++ standard nvcc is told to use for .cu files; nvcc 13.4 " +
-                  "accepts up to c++23. Note this does not decide what the " +
-                  "libstdc++ headers in the TU expand as -- the cc " +
-                  "toolchain's own -std, forwarded via -Xcompiler, does, and " +
-                  "it is deliberately older. See compile.bzl.",
+            doc = "nvcc's -std for .cu files. nvcc 13.4 accepts up to c++23.",
         ),
         "host_std": attr.string(
             default = "c++17",
-            doc = "C++ standard for the host pass of a .cu, pinned after the " +
-                  "cc toolchain's own -std so it wins regardless of what " +
-                  "hermetic-llvm defaults to. This is what libstdc++'s " +
-                  "headers expand against, and it is a floor, not a " +
-                  "preference: C++20 library code that EDG cannot parse " +
-                  "(std::atomic's __builtin_clear_padding) must stay out of " +
-                  "the translation unit. Raise it only with the Thrust test " +
-                  "green. A target can override it with host_copts.",
+            doc = "What libstdc++'s headers expand against in a .cu. A " +
+                  "floor, not a preference: above c++17, <atomic> reaches " +
+                  "__builtin_clear_padding, which EDG does not implement. " +
+                  "Overridable per target with host_copts.",
         ),
         "allow_unsupported_compiler": attr.bool(default = True),
     },
