@@ -38,6 +38,22 @@ Select architectures globally with `--//bazel/cuda:archs=sm_90a,compute_90`
 per target with the `archs` attribute. Extra flags: `copts` (nvcc),
 `host_copts` (`-Xcompiler`), `ptxasopts` (`-Xptxas`).
 
+## Bumping CUDA
+
+Set `CUDA_VERSION` in `toolkit/repo.bzl`, then replace `_MANIFEST_SHA256`
+with the sha256 of that release's manifest:
+
+```sh
+curl -sL https://developer.download.nvidia.com/compute/cuda/redist/redistrib_<label>.json |
+  shasum -a 256
+```
+
+Building without updating the hash also works: Bazel reports the one it got,
+and that is the value to paste in. Nothing else needs touching — component
+versions, paths and hashes all come from the manifest, and the fetch fails
+with a clear message if a listed component is missing from the new release or
+is not published for the pinned platform.
+
 ## Why `--config=cuda`
 
 nvcc's EDG-based device frontend cannot parse modern libc++ headers (this
@@ -55,11 +71,12 @@ green on the default platform.
 ## Layout
 
 - `defs.bzl` — public API: `cuda_library`, `requires_cuda`.
-- `toolkit/` — the CUDA toolkit itself: `pins.bzl` holds one pinned archive
-  per component, `repo.bzl` stages them all at a single repository root so the
-  result mirrors a normal toolkit install, and `toolkit.BUILD.bazel` exposes
-  the headers, the static runtime and the driver link stub. Bump CUDA with
-  `python3 bazel/cuda/toolkit/update_pins.py <version>`.
+- `toolkit/` — the CUDA toolkit itself. `repo.bzl` pins a release label and
+  the sha256 of NVIDIA's manifest for it, lists the 7 of ~40 published
+  components these rules need, and stages them all at a single repository root
+  so the result mirrors a normal toolkit install; the manifest supplies each
+  component's version, path and hash. `toolkit.BUILD.bazel` exposes the
+  headers, the static runtime and the driver link stub.
 - `toolchain/` — toolchain type, `cuda_toolchain` rule, nvcc wiring, default
   nvcc flags as `cuda_args` targets.
 - `private/compile.bzl` — the single `CudaCompile` action: nvcc with
@@ -88,13 +105,13 @@ green on the default platform.
   source would need it). `libcudadevrt.a` and `libculibos.a` are already
   staged, and adding it is additive rather than an API break, so the missing
   pieces are the device-link action and a `CudaInfo` on `_cuda_objects`.
-- Linux x86_64 only: the pins in `toolkit/pins.bzl` are `linux-x86_64`
-  archives, and `--config=cuda` selects
+- Linux x86_64 only: `toolkit/repo.bzl` pins `_PLATFORM` to `linux-x86_64`,
+  and `--config=cuda` selects
   `//bazel/cuda/platforms:linux_x86_64`. A `linux_aarch64` platform exists
   but would also need `linux-sbsa` pins, and nvcc.profile resolves headers
   under `targets/sbsa-linux/` for cross builds.
 - nvcc only (no clang-CUDA mode yet).
-- CUDA 13.4.3 pinned in `toolkit/pins.bzl`. nvcc 13.4 accepts up to `c++23`,
+- CUDA 13.4.3 pinned in `toolkit/repo.bzl`. nvcc 13.4 accepts up to `c++23`,
   and `cuda_std` (`c++23`) is the dialect its frontend is *told*. The
   libstdc++ headers inside a `.cu` still expand at the cc toolchain's own
   `-std`, which `compile.bzl` forwards through `-Xcompiler`, so the two
