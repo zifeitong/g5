@@ -1,0 +1,99 @@
+# CUDA {CUDA_VERSION}. Generated from //bazel/cuda/toolkit:toolkit.BUILD.bazel.
+#
+# Target semantics follow hermeticbuild/cuda-toolkit's per-component BUILD
+# templates, flattened: one repository holding a toolkit-shaped tree rather
+# than one repository per redistributable component.
+
+load("@rules_cc//cc:cc_import.bzl", "cc_import")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["bin/nvcc"])
+
+# nvcc.profile resolves cicc, libdevice, the toolkit headers and the link
+# stubs relative to bin/nvcc, so the whole tree has to reach the action
+# sandbox, not just the driver binary.
+filegroup(
+    name = "toolkit_files",
+    srcs = glob(
+        [
+            "bin/**",
+            "include/**",
+            "lib/**",
+            "nvvm/**",
+        ],
+        allow_empty = False,
+    ),
+)
+
+cc_library(
+    name = "headers",
+    hdrs = glob(["include/**"]),
+    # CUDA 13 relocated Thrust, CUB and libcu++ under include/cccl. nvcc adds
+    # that directory itself through nvcc.profile; host compiles need it here.
+    includes = [
+        "include",
+        "include/cccl",
+    ],
+)
+
+cc_import(
+    name = "cudart_static_library",
+    static_library = "lib/libcudart_static.a",
+    deps = [":headers"],
+)
+
+cc_import(
+    name = "cudadevrt_static_library",
+    static_library = "lib/libcudadevrt.a",
+    deps = [":headers"],
+)
+
+cc_import(
+    name = "culibos_static_library",
+    static_library = "lib/libculibos.a",
+    deps = [":headers"],
+)
+
+# Resolves the driver API at link time without a driver present; libcuda.so.1
+# itself comes from the installed NVIDIA driver at run time.
+cc_import(
+    name = "cuda_driver_stub",
+    interface_library = "lib/stubs/libcuda.so",
+    system_provided = 1,
+    deps = [":headers"],
+)
+
+cc_import(
+    name = "cudart_shared_library",
+    shared_library = "lib/libcudart.so.{CUDART_VERSION}",
+    deps = [":headers"],
+)
+
+# nvcc's own default linkage. Leaves libcuda.so.1 as the binary's only CUDA
+# runtime dependency, so nothing has to stage libcudart.so alongside it.
+#
+# A process must contain exactly one CUDA runtime. Prefer :cudart_shared for
+# any binary that also loads an NVIDIA shared library carrying its own
+# DT_NEEDED on libcudart.so, or that dlopens a module which links the runtime
+# itself; two static copies give each half its own context and allocation
+# bookkeeping, and pointers do not cross between them.
+cc_library(
+    name = "cudart_static",
+    linkopts = ["-lrt"],
+    deps = [
+        ":cuda_driver_stub",
+        ":cudadevrt_static_library",
+        ":cudart_static_library",
+        ":culibos_static_library",
+    ],
+)
+
+cc_library(
+    name = "cudart_shared",
+    deps = [
+        ":cuda_driver_stub",
+        ":cudart_shared_library",
+    ],
+)

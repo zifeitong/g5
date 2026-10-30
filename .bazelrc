@@ -1,4 +1,4 @@
-# Use C++23.
+# Use C++23. Keep //bazel/cuda's cuda_std in step with this.
 common --cxxopt=-std=c++23
 
 # Allow per-platform configuration.
@@ -7,6 +7,10 @@ common --enable_platform_specific_config
 # Enable thinLTO.
 common:thin_lto --features=thin_lto
 common:thin_lto --copt=-Wno-unused-command-line-argument
+
+# CUDA builds. nvcc requires libstdc++ (its device frontend cannot parse
+# libc++ headers), so CUDA builds run on a dedicated libstdc++ platform.
+common:cuda --platforms=//bazel/cuda/platforms:linux_x86_64
 
 # Enable sanitizers.
 common:asan --@llvm//config:asan=true

@@ -1,0 +1,11 @@
+load("//bazel/cuda/private:settings.bzl", "archs_flag")
+
+package(default_visibility = ["//visibility:public"])
+
+# Default CUDA architectures; override per invocation with
+#   --//bazel/cuda:archs=sm_90a,compute_90
+# or per target with cuda_library(archs = [...]).
+archs_flag(
+    name = "archs",
+    build_setting_default = "sm_90",
+)

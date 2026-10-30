@@ -558,9 +558,22 @@
   },
   "selectedYankedVersions": {},
   "moduleExtensions": {
+    "//bazel/cuda/toolkit:extensions.bzl%cuda_sdk": {
+      "general": {
+        "bzlTransitiveDigest": "FeuLdZ+KksslmJFooOvM5yFZyydXqF3AHZw7aj5p0oQ=",
+        "usagesDigest": "1USiecki/TxQPk67ZAcZL5DrUAqkEx1FSewv1plnv4Q=",
+        "recordedInputs": [],
+        "generatedRepoSpecs": {
+          "cuda_sdk": {
+            "repoRuleId": "@@//bazel/cuda/toolkit:repo.bzl%cuda_toolkit",
+            "attributes": {}
+          }
+        }
+      }
+    },
     "@@envoy_api+//bazel:extensions.bzl%non_module_deps": {
       "general": {
-        "bzlTransitiveDigest": "ytkSM7RdJhqXnlJDxSVZD9pVLMDU9S6rWC8xrPBXsEE=",
+        "bzlTransitiveDigest": "juv/amWFYqAdH78NUM/o1BJ5zL0satbwmCxV8YOWFso=",
         "usagesDigest": "jK63LoG8zYrKksbHof5AlM87r2BlrL1DI25Mo2/lR0U=",
         "recordedInputs": [
           "REPO_MAPPING:envoy_api+,bazel_tools bazel_tools",
@@ -612,7 +625,7 @@
     "@@grpc+//bazel:extensions.bzl%exec_properties": {
       "general": {
         "bzlTransitiveDigest": "C9g6ijTS6Lje+XG5c5mDmAaZaTlui4lk3BEeg1bUjFA=",
-        "usagesDigest": "HoL80IuiIe9E/qO8jwXyb/wu6PpKSOEGk/LNzff5mnI=",
+        "usagesDigest": "DnFkcYnykYwCIKpoMG+5yF+24o5Nfa6VB0neLtDhDiA=",
         "recordedInputs": [
           "REPO_MAPPING:grpc+,bazel_toolchains grpc++http_archive+bazel_toolchains"
         ],
@@ -629,7 +642,7 @@
     "@@protobuf+//python/dist:system_python.bzl%system_python_extension": {
       "general": {
         "bzlTransitiveDigest": "qh0n9IrXU/xS94wxKQrG1J63zrLkA1Wy2Y3BQxptPcI=",
-        "usagesDigest": "gM2v8KEcm9rpUrlYSngytVomDKFCsh+Qb9pL3rcZurY=",
+        "usagesDigest": "729NT5g1WOPoRlz1gj2n8O5W61I2KE7oupR2tCn6Xac=",
         "recordedInputs": [],
         "generatedRepoSpecs": {
           "system_python": {
@@ -643,7 +656,7 @@
     },
     "@@rules_android+//bzlmod_extensions:apksig.bzl%apksig_extension": {
       "general": {
-        "bzlTransitiveDigest": "qEcqhUuyYlPmvAtyYRqS+4Y7cRHA2Vho3JIBJZJJX+s=",
+        "bzlTransitiveDigest": "0A8O20aQTIZnt20CyMK1wzktVUyJO1Y3jI6cS1WftKQ=",
         "usagesDigest": "zr/niBQ/s2fHozWAsg4vI70wAxcuFjG+QtM15qGkq9o=",
         "recordedInputs": [
           "REPO_MAPPING:rules_android+,bazel_tools bazel_tools"
@@ -661,7 +674,7 @@
     },
     "@@rules_android+//bzlmod_extensions:com_android_dex.bzl%com_android_dex_extension": {
       "general": {
-        "bzlTransitiveDigest": "gTuOqknGgqPw9YQSCY+qXxgxVwiLRGdBCsCe4i4q/xw=",
+        "bzlTransitiveDigest": "stTLqB1DjqvC1RcosQO9gDBmAlvTegb/9MYDyiRNuFo=",
         "usagesDigest": "c1Y/KGGjUYCyd8zNIVTUh1bynVXRFz6xGKaSCBpQANM=",
         "recordedInputs": [
           "REPO_MAPPING:rules_android+,bazel_tools bazel_tools"
@@ -692,7 +705,7 @@
     },
     "@@rules_perl+//perl:extensions.bzl%perl_repositories": {
       "general": {
-        "bzlTransitiveDigest": "Gd6ZAhd8uK8ISFtBAmMWVA5xlNiJ/0RI1lzxzVqy77A=",
+        "bzlTransitiveDigest": "gbB8Yh5+AMMp1dt5kSHNh+Sa9JNi3lWVQnV5ks9hd80=",
         "usagesDigest": "qSSNDdCNVxNhY36wMndEAFacdhR0ooLTmumfad0km9s=",
         "recordedInputs": [
           "REPO_MAPPING:rules_perl+,bazel_tools bazel_tools",
@@ -1061,7 +1074,7 @@
     },
     "@@rules_rust+//crate_universe/private:internal_extensions.bzl%cu_nr": {
       "general": {
-        "bzlTransitiveDigest": "9qd8KjNI05cjoyGtJ+zNFyfBO6oyhcRWaPLkrruS16U=",
+        "bzlTransitiveDigest": "N77zFEP3jASYPQkC8U0fSDy3NAQ4hdRXFPNq4eb0PoE=",
         "usagesDigest": "tG3p3Nb5XxC7vWY/bcKdb//g0HoAxpxxH3F5/jBVlk4=",
         "recordedInputs": [
           "REPO_MAPPING:bazel_features+,bazel_features_globals bazel_features++version_extension+bazel_features_globals",
