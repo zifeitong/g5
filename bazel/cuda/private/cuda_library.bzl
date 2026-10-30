@@ -31,7 +31,7 @@ CUDA_TOOLCHAIN_TYPE = "//bazel/cuda/toolchain:toolchain_type"
 
 # Toolkit headers implicitly visible to every cuda_library, on both the nvcc
 # side (via the toolchain's headers attr) and the exported cc_library side.
-CUDA_TOOLKIT_HDRS = [Label("@cuda_sdk//:headers")]
+CUDA_TOOLKIT_HDRS = [Label("@cuda_toolkit//:headers")]
 
 def _merged_compilation_inputs(ctx, toolkit_header_targets):
     """Read-only merge of dep/toolkit compilation contexts plus our own attrs."""
