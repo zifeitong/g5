@@ -1,14 +1,5 @@
-# Platforms for CUDA builds.
-#
-# nvcc's EDG-based device frontend cannot parse libc++ 22 headers (hermetic-llvm's
-# default C++ standard library), but fully supports libstdc++. These platforms
-# select hermetic-llvm's hermetic libstdc++/GCC runtime instead of libc++ for the
-# whole build, which is the supported configuration for nvcc (and what XLA/JAX
-# ship with). Build CUDA targets with:
-#
-#   bazel build --platforms=//bazel/cuda/platforms:linux_x86_64 ...
-#
-# or put it behind a --config in .bazelrc.
+# libstdc++ platforms for CUDA builds; nvcc cannot parse libc++ headers.
+# Selected by --config=cuda. See ../README.md.
 
 package(default_visibility = ["//visibility:public"])
 
