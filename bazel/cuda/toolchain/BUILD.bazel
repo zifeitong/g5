@@ -1,0 +1,42 @@
+load("//bazel/cuda/private:args_eval.bzl", "cuda_args")
+load(":cuda_toolchain.bzl", "cuda_toolchain")
+
+package(default_visibility = ["//visibility:public"])
+
+toolchain_type(name = "toolchain_type")
+
+cuda_args(
+    name = "default_compile_args",
+    args = [
+        "--expt-relaxed-constexpr",
+        "--extended-lambda",
+    ],
+)
+
+cuda_toolchain(
+    name = "nvcc_toolchain",
+    args = [":default_compile_args"],
+    headers = ["@cuda_sdk//:headers"],
+    nvcc = "@cuda_sdk//:bin/nvcc",
+    toolkit_files = ["@cuda_sdk//:toolkit_files"],
+)
+
+[
+    toolchain(
+        name = "nvcc_linux_{}".format(cpu),
+        exec_compatible_with = [
+            "@platforms//os:linux",
+            "@platforms//cpu:{}".format(cpu),
+        ],
+        target_compatible_with = [
+            "@platforms//os:linux",
+            "@platforms//cpu:{}".format(cpu),
+        ],
+        toolchain = ":nvcc_toolchain",
+        toolchain_type = ":toolchain_type",
+    )
+    for cpu in [
+        "x86_64",
+        "aarch64",
+    ]
+]
