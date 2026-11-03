@@ -82,7 +82,7 @@ def compile_cuda_object(
         if "libcxx" in flag:
             fail(
                 "cuda_library requires the libstdc++ platform; " +
-                "build with --config=cuda (or --platforms=//bazel/cuda/platforms:linux_x86_64). " +
+                "build with --config=cuda. " +
                 "nvcc's device frontend cannot parse libc++ headers.",
             )
 

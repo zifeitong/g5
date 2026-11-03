@@ -560,7 +560,7 @@
   "moduleExtensions": {
     "//bazel/cuda:toolkit/repo.bzl%cuda_toolkit": {
       "general": {
-        "bzlTransitiveDigest": "aOKMH2hXiPbNNb1fVZ+LJ4kfqaK7C0eLGyrnAx+MRKI=",
+        "bzlTransitiveDigest": "Qq4ojABHB06tX7UkQ5ElXJmPnk5lIahHG+uAHPYCWG8=",
         "usagesDigest": "6jU/IcyFD32TfwR/zpIqhYqeYLSbUAOYz1kRX79mNes=",
         "recordedInputs": [],
         "generatedRepoSpecs": {

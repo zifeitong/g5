@@ -25,7 +25,9 @@ CUDA_VERSION = "13.4.3"
 _BASE_URL = "https://developer.download.nvidia.com/compute/cuda/redist/"
 _MANIFEST_URL = "{}redistrib_{}.json".format(_BASE_URL, CUDA_VERSION)
 _MANIFEST_SHA256 = "1420d5c676cad98a5ff423d529f116fee92f6b99559a3afdad41e782d6a11dba"
-_PLATFORM = "linux-x86_64"
+# Follows the host, which the toolchains require to match the target. "sbsa"
+# is NVIDIA's aarch64 server build; rctx.os.arch is Java's, hence amd64.
+_PLATFORMS = {"amd64": "linux-x86_64", "aarch64": "linux-sbsa"}
 _MANIFEST = "redistrib.json"
 
 _COMPONENTS = [
@@ -38,6 +40,10 @@ _COMPONENTS = [
 ]
 
 def _cuda_toolkit_repository_impl(rctx):
+    platform = _PLATFORMS.get(rctx.os.arch)
+    if not platform:
+        fail("no CUDA toolkit is published for {}".format(rctx.os.arch))
+
     rctx.download(
         url = _MANIFEST_URL,
         output = _MANIFEST,
@@ -56,14 +62,14 @@ def _cuda_toolkit_repository_impl(rctx):
         if name not in manifest:
             fail("{} is not in CUDA {}'s manifest".format(name, CUDA_VERSION))
         component = manifest[name]
-        if _PLATFORM not in component:
-            fail("{} has no {} build in CUDA {}".format(name, _PLATFORM, CUDA_VERSION))
+        if platform not in component:
+            fail("{} has no {} build in CUDA {}".format(name, platform, CUDA_VERSION))
         # Every component NVIDIA publishes uses its archive's basename, minus
         # the .tar.xz suffix, as the single top-level directory inside it.
-        relative_path = component[_PLATFORM]["relative_path"]
+        relative_path = component[platform]["relative_path"]
         rctx.download_and_extract(
             url = _BASE_URL + relative_path,
-            sha256 = component[_PLATFORM]["sha256"],
+            sha256 = component[platform]["sha256"],
             stripPrefix = relative_path.rsplit("/", 1)[-1].removesuffix(".tar.xz"),
         )
 
