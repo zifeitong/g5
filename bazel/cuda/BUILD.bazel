@@ -2,10 +2,8 @@ load("//bazel/cuda/private:settings.bzl", "archs_flag")
 
 package(default_visibility = ["//visibility:public"])
 
-# Hopper, Blackwell and Blackwell Ultra. The a suffix enables the
-# arch-specific features CUTLASS and FlashAttention need; plain sm_90 cannot
-# use wgmma or TMA, and it is per chip, so sm_100a does not cover sm_103.
-# Override with --//bazel/cuda:archs=... or per target.
+# Build for Hopper and Blackwell by default.
+# Override with --//bazel/cuda:archs=... or at the per-target level.
 archs_flag(
     name = "archs",
     build_setting_default = [
