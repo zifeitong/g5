@@ -52,15 +52,15 @@ Building without updating the hash also works: Bazel reports the one it got,
 and that is the value to paste in. Nothing else needs touching — component
 versions, paths and hashes all come from the manifest, and the fetch fails
 with a clear message if a listed component is missing from the new release or
-is not published for the pinned platform.
+is not published for the host's platform.
 
 ## Why `--config=cuda`
 
 nvcc's EDG-based device frontend cannot parse modern libc++ headers (this
 repo's default C++ standard library), and CUDA's own headers depend on
 libstdc++/older libc++ internals. The supported nvcc configuration is
-libstdc++ — the same choice XLA/JAX ship with. `--config=cuda` selects
-`//bazel/cuda/platforms:linux_x86_64`, which swaps the whole build onto
+libstdc++ — the same choice XLA/JAX ship with. `--config=cuda` selects a
+`//bazel/cuda/platforms` platform, which swaps the whole build onto
 hermetic-llvm's hermetic libstdc++ (GCC 14.2 runtime, built from source). Do
 not link libc++-built objects and libstdc++-built objects into one binary.
 
@@ -105,11 +105,13 @@ green on the default platform.
   source would need it). `libcudadevrt.a` and `libculibos.a` are already
   staged, and adding it is additive rather than an API break, so the missing
   pieces are the device-link action and a `CudaInfo` on `_cuda_objects`.
-- Linux x86_64 only: `toolkit/repo.bzl` pins `_PLATFORM` to `linux-x86_64`,
-  and `--config=cuda` selects
-  `//bazel/cuda/platforms:linux_x86_64`. A `linux_aarch64` platform exists
-  but would also need `linux-sbsa` pins, and nvcc.profile resolves headers
-  under `targets/sbsa-linux/` for cross builds.
+- Native builds only: `toolkit/repo.bzl` picks the toolkit from the host
+  arch, and the toolchains require exec arch to equal target arch. Linux
+  x86_64 and aarch64 (NVIDIA's `linux-sbsa`) both work, the latter with
+  `--platforms=//bazel/cuda/platforms:linux_aarch64`. Cross-compiling would
+  stage the target's components under `targets/sbsa-linux/` and pass nvcc
+  `--target-directory`, which breaks the single flat tree the toolkit relies
+  on.
 - nvcc only (no clang-CUDA mode yet).
 - CUDA 13.4.3 pinned in `toolkit/repo.bzl`. nvcc 13.4 accepts up to `c++23`,
   and `cuda_std` (`c++23`) is the dialect its frontend is *told*. The
