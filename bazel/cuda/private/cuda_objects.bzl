@@ -1,27 +1,21 @@
-"""cuda_library: nvcc-compiled objects wrapped in an ordinary cc_library.
+"""The nvcc rule behind cuda_library: one .o per .cu, nothing else.
 
-  _cuda_objects (rule)  — runs nvcc per .cu, reading dep CcInfos to assemble
-                          include paths/defines/headers; outputs plain .o
-                          files.
-  cuda_library (macro)  — feeds those objects into cc_library, which owns
-                          provider assembly, archiving, header export and the
-                          whole cc_library attribute surface (alwayslink,
-                          linkstatic, implementation_deps, ...).
-
-The split buys that attribute surface for free; it is not forced by Bazel.
-CcInfo, cc_common.compile, create_compilation_outputs and
+It reads dep CcInfos to assemble include paths, defines and headers, and
+leaves provider assembly, archiving and header export to the cc_library that
+cuda_library wraps it in. That split buys cc_library's whole attribute surface
+(alwayslink, linkstatic, implementation_deps, ...) for free; it is not forced
+by Bazel. CcInfo, cc_common.compile, create_compilation_outputs and
 create_linking_context_from_compilation_outputs are all callable from a
 root-module .bzl and the result links and runs. Only
 cc_common.create_library_to_link is allowlisted private API
 (_PRIVATE_STARLARKIFICATION_ALLOWLIST), and nothing here needs it.
 
-So _cuda_objects could return a CcInfo directly. The reason to make it one is
-relocatable device code: a device-link step needs the device objects of the
-whole transitive closure, which means propagating a CudaInfo next to CcInfo,
-and a macro cannot return providers.
+So this could return a CcInfo directly. The reason it stays a rule feeding a
+macro is relocatable device code: a device-link step needs the device objects
+of the whole transitive closure, which means propagating a CudaInfo next to
+CcInfo, and a macro cannot return providers.
 """
 
-load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load(":compile.bzl", "compile_cuda_object")
@@ -87,7 +81,7 @@ def _cuda_objects_impl(ctx):
     ]
     return [DefaultInfo(files = depset(objects))]
 
-_cuda_objects = rule(
+cuda_objects = rule(
     implementation = _cuda_objects_impl,
     attrs = {
         "srcs": attr.label_list(allow_files = [".cu"]),
@@ -117,68 +111,3 @@ def incompatible_unless_libstdcxx():
         "@llvm//runtimes/cxxstdlib:libstdcxx_linux": [],
         "//conditions:default": ["@platforms//:incompatible"],
     })
-
-def cuda_library(
-        name,
-        srcs = [],
-        hdrs = [],
-        deps = [],
-        includes = [],
-        defines = [],
-        local_defines = [],
-        copts = [],
-        host_copts = [],
-        ptxasopts = [],
-        archs = [],
-        alwayslink = False,
-        target_compatible_with = [],
-        visibility = None,
-        **kwargs):
-    """Compiles .cu files with nvcc; result is consumable as a cc_library.
-
-    Args:
-        name: target name.
-        srcs: .cu sources (compiled by nvcc).
-        hdrs: exported headers, visible to srcs and to dependents.
-        deps: CcInfo dependencies, visible to srcs and propagated.
-        includes: include dirs, relative to this package.
-        defines: -D defines for srcs and dependents.
-        local_defines: -D defines for srcs only.
-        copts: flags passed to nvcc directly.
-        host_copts: flags passed to the host compiler via -Xcompiler.
-        ptxasopts: flags passed to ptxas via -Xptxas.
-        archs: CUDA archs; defaults to --//bazel/cuda:archs.
-        alwayslink: link all objects even if unreferenced (kernel registration).
-        visibility: standard.
-        **kwargs: forwarded to the underlying cc_library (tags, testonly, ...).
-    """
-    objects_name = name + "_cuda_objs"
-    _cuda_objects(
-        name = objects_name,
-        srcs = srcs,
-        hdrs = hdrs,
-        deps = deps,
-        includes = includes,
-        defines = defines,
-        local_defines = local_defines,
-        copts = copts,
-        host_copts = host_copts,
-        ptxasopts = ptxasopts,
-        archs = archs,
-        target_compatible_with = target_compatible_with + incompatible_unless_libstdcxx(),
-        visibility = ["//visibility:private"],
-        **{k: v for k, v in kwargs.items() if k in ["tags", "testonly"]}
-    )
-    cc_library(
-        name = name,
-        srcs = [":" + objects_name],
-        hdrs = hdrs,
-        deps = deps + CUDA_TOOLKIT_HDRS,
-        includes = includes,
-        defines = defines,
-        alwayslink = alwayslink,
-        linkstatic = True,
-        target_compatible_with = target_compatible_with + incompatible_unless_libstdcxx(),
-        visibility = visibility,
-        **kwargs
-    )

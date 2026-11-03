@@ -5,12 +5,11 @@ One nvcc invocation per .cu file. nvcc drives the whole pipeline internally
 is a single Bazel action with the entire nvcc package declared as inputs.
 
 Host-compiler flags are extracted from the resolved cc_toolchain (hermetic-llvm)
-so CUDA objects see the same sysroot/libc++/ABI configuration as every other
+so CUDA objects see the same sysroot/libstdc++/ABI configuration as every other
 object in the build, and are forwarded via -Xcompiler.
 """
 
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
-load(":providers.bzl", "CudaToolchainInfo")
 
 CPP_COMPILE_ACTION_NAME = "c++-compile"
 

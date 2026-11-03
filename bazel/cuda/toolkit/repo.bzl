@@ -80,7 +80,7 @@ def _cuda_toolkit_repository_impl(rctx):
         executable = False,
     )
 
-_cuda_toolkit_repository = repository_rule(
+cuda_toolkit_repository = repository_rule(
     implementation = _cuda_toolkit_repository_impl,
     attrs = {
         "_build_file": attr.label(
@@ -90,8 +90,3 @@ _cuda_toolkit_repository = repository_rule(
     },
     doc = "The pinned CUDA toolkit, extracted as a single toolkit-shaped tree.",
 )
-
-def _cuda_toolkit_extension_impl(_module_ctx):
-    _cuda_toolkit_repository(name = "cuda_toolkit")
-
-cuda_toolkit = module_extension(implementation = _cuda_toolkit_extension_impl)
