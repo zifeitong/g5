@@ -59,8 +59,8 @@ is not published for the host's platform.
 nvcc's EDG-based device frontend cannot parse modern libc++ headers (this
 repo's default C++ standard library), and CUDA's own headers depend on
 libstdc++/older libc++ internals. The supported nvcc configuration is
-libstdc++ — the same choice XLA/JAX ship with. `--config=cuda` selects a
-`//bazel/cuda/platforms` platform, which swaps the whole build onto
+libstdc++ — the same choice XLA/JAX ship with. `--config=cuda` selects
+`//bazel/cuda/platforms:linux`, which swaps the whole build onto
 hermetic-llvm's hermetic libstdc++ (GCC 14.2 runtime, built from source). Do
 not link libc++-built objects and libstdc++-built objects into one binary.
 
@@ -91,7 +91,7 @@ green on the default platform.
   allowlisted, and it is not needed — and is the route to RDC, since a
   device-link step needs a `CudaInfo` propagated beside `CcInfo` and a macro
   cannot return providers.
-- `platforms/` — libstdc++ platforms for CUDA builds.
+- `platforms/` — the libstdc++ platform for CUDA builds.
 - `tests/` — saxpy (mixed nvcc/clang binary), a Thrust compile stress test,
   and `flash_attn`, a FlashAttention-2 forward pass (KV-block tiling,
   online softmax, epilogue normalization, parallel over sequence length)
@@ -106,12 +106,12 @@ green on the default platform.
   staged, and adding it is additive rather than an API break, so the missing
   pieces are the device-link action and a `CudaInfo` on `_cuda_objects`.
 - Native builds only: `toolkit/repo.bzl` picks the toolkit from the host
-  arch, and the toolchains require exec arch to equal target arch. Linux
-  x86_64 and aarch64 (NVIDIA's `linux-sbsa`) both work, the latter with
-  `--platforms=//bazel/cuda/platforms:linux_aarch64`. Cross-compiling would
-  stage the target's components under `targets/sbsa-linux/` and pass nvcc
-  `--target-directory`, which breaks the single flat tree the toolkit relies
-  on.
+  arch and `platforms:linux` takes its CPU from the host, because the
+  toolchains require exec arch to equal target arch. Linux x86_64 and
+  aarch64 (NVIDIA's `linux-sbsa`) both work with no extra flags.
+  Cross-compiling would stage the target's components under
+  `targets/sbsa-linux/` and pass nvcc `--target-directory`, which breaks
+  the single flat tree the toolkit relies on.
 - nvcc only (no clang-CUDA mode yet).
 - CUDA 13.4.3 pinned in `toolkit/repo.bzl`. nvcc 13.4 accepts up to `c++23`,
   and `cuda_std` (`c++23`) is the dialect its frontend is *told*. The

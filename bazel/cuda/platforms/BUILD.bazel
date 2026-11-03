@@ -1,20 +1,15 @@
-# libstdc++ platforms for CUDA builds; nvcc cannot parse libc++ headers.
-# Selected by --config=cuda. See ../README.md.
+# libstdc++ platform for CUDA builds; nvcc cannot parse libc++ headers.
+# Selected by --config=cuda. See ../README.md. The CPU comes from the host,
+# since the toolchains require exec arch to equal target arch.
 
 package(default_visibility = ["//visibility:public"])
 
-[
-    platform(
-        name = "linux_{}".format(cpu),
-        constraint_values = [
-            "@platforms//os:linux",
-            "@platforms//cpu:{}".format(cpu),
-            "@llvm//constraints/cxxstdlib:libstdcxx.14.2.0",
-            "@llvm//constraints/libc:gnu.2.28",
-        ],
-    )
-    for cpu in [
-        "x86_64",
-        "aarch64",
-    ]
-]
+platform(
+    name = "linux",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@llvm//constraints/cxxstdlib:libstdcxx.14.2.0",
+        "@llvm//constraints/libc:gnu.2.28",
+    ],
+    parents = ["@platforms//host"],
+)

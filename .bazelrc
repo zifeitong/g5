@@ -8,8 +8,8 @@ common --enable_platform_specific_config
 common:thin_lto --features=thin_lto
 common:thin_lto --copt=-Wno-unused-command-line-argument
 
-# Enable CUDA builds. On an aarch64 host, override this in user.bazelrc.
-common:cuda --platforms=//bazel/cuda/platforms:linux_x86_64
+# Enable CUDA builds.
+common:cuda --platforms=//bazel/cuda/platforms:linux
 
 # Enable sanitizers.
 common:asan --@llvm//config:asan=true
