@@ -15,5 +15,5 @@ CudaToolchainInfo = provider(
 
 ArchsInfo = provider(
     doc = "Parsed value of the --//bazel/cuda:archs build flag.",
-    fields = {"archs": "list[str]: e.g. [\"sm_90\", \"compute_90\"]"},
+    fields = {"archs": "list[str]: e.g. [\"sm_90a\", \"sm_100a\"]"},
 )

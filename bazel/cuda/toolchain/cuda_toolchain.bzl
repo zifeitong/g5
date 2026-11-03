@@ -22,10 +22,7 @@ def _cuda_toolchain_impl(ctx):
         host_std = ctx.attr.host_std,
         allow_unsupported_compiler = ctx.attr.allow_unsupported_compiler,
     )
-    return [
-        platform_common.ToolchainInfo(cuda = info),
-        info,
-    ]
+    return [platform_common.ToolchainInfo(cuda = info)]
 
 cuda_toolchain = rule(
     implementation = _cuda_toolchain_impl,

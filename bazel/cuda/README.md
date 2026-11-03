@@ -8,7 +8,8 @@ sysroot.
 ## Usage
 
 ```starlark
-load("//bazel/cuda:defs.bzl", "cuda_library", "requires_cuda")
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("//bazel/cuda:cuda_library.bzl", "cuda_library")
 
 cuda_library(
     name = "kernels",
@@ -19,7 +20,6 @@ cuda_library(
 cc_binary(
     name = "app",
     srcs = ["main.cc"],
-    target_compatible_with = requires_cuda(),
     deps = [
         ":kernels",
         "@cuda_toolkit//:cudart_static",
@@ -64,39 +64,34 @@ libstdc++ — the same choice XLA/JAX ship with. `--config=cuda` selects
 hermetic-llvm's hermetic libstdc++ (GCC 14.2 runtime, built from source). Do
 not link libc++-built objects and libstdc++-built objects into one binary.
 
-Outside the CUDA configuration, `cuda_library` targets (and anything marked
-`requires_cuda()`) are skipped as incompatible, so `bazel build //...` stays
-green on the default platform.
+Outside the CUDA configuration, `cuda_library` targets are skipped as
+incompatible, and so is anything depending on one, since incompatibility is
+transitive. `bazel build //...` stays green on the default platform.
 
 ## Layout
 
-- `defs.bzl` — public API: `cuda_library`, `requires_cuda`.
+- `cuda_library.bzl` — public API: the `cuda_library` macro, which feeds
+  the nvcc objects into a `cc_library`.
 - `toolkit/` — the CUDA toolkit itself. `repo.bzl` pins a release label and
   the sha256 of NVIDIA's manifest for it, lists the 7 of ~40 published
   components these rules need, and stages them all at a single repository root
   so the result mirrors a normal toolkit install; the manifest supplies each
   component's version, path and hash. `toolkit.BUILD.bazel` exposes the
   headers, the static runtime and the driver link stub.
-- `toolchain/` — toolchain type, `cuda_toolchain` rule, nvcc wiring, default
-  nvcc flags as `cuda_args` targets.
+- `toolchain/` — toolchain type, `cuda_toolchain` rule, nvcc wiring, and the
+  default nvcc flags as its `compile_args` attribute.
 - `private/compile.bzl` — the single `CudaCompile` action: nvcc with
   `-ccbin` pointed at the resolved cc_toolchain's clang, and host flags
   extracted via `cc_common` and forwarded through `-Xcompiler`. Because the
   toolkit is staged as one tree, `bin/nvcc.profile` locates cicc, libdevice,
   the toolkit headers and the link stubs on its own.
-- `private/cuda_library.bzl` — `_cuda_objects` rule (produces `.o` files) +
-  `cuda_library` macro wrapping them into a `cc_library`, which owns provider
-  assembly and the full `cc_library` attribute surface. A rule returning
-  `CcInfo` directly is possible — only `cc_common.create_library_to_link` is
-  allowlisted, and it is not needed — and is the route to RDC, since a
-  device-link step needs a `CudaInfo` propagated beside `CcInfo` and a macro
-  cannot return providers.
+- `private/cuda_objects.bzl` — the `cuda_objects` rule, which produces the
+  `.o` files; `cc_library` owns provider assembly and the full attribute
+  surface. A rule returning `CcInfo` directly is possible — only
+  `cc_common.create_library_to_link` is allowlisted, and it is not needed —
+  and is the route to RDC, since a device-link step needs a `CudaInfo`
+  propagated beside `CcInfo` and a macro cannot return providers.
 - `platforms/` — the libstdc++ platform for CUDA builds.
-- `tests/` — saxpy (mixed nvcc/clang binary), a Thrust compile stress test,
-  and `flash_attn`, a FlashAttention-2 forward pass (KV-block tiling,
-  online softmax, epilogue normalization, parallel over sequence length)
-  with a double-precision host reference. Algorithmically faithful but not
-  performance-tuned: no tensor cores, no warp specialization.
 
 ## Known limitations
 

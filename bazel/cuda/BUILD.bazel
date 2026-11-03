@@ -2,10 +2,13 @@ load("//bazel/cuda/private:settings.bzl", "archs_flag")
 
 package(default_visibility = ["//visibility:public"])
 
-# Default CUDA architectures; override per invocation with
-#   --//bazel/cuda:archs=sm_90a,compute_90
-# or per target with cuda_library(archs = [...]).
+# Hopper and Blackwell. The a suffix enables the arch-specific features
+# CUTLASS and FlashAttention need; plain sm_90 cannot use wgmma or TMA.
+# Override with --//bazel/cuda:archs=... or per target.
 archs_flag(
     name = "archs",
-    build_setting_default = ["sm_90"],
+    build_setting_default = [
+        "sm_90a",
+        "sm_100a",
+    ],
 )
