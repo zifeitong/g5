@@ -21,6 +21,8 @@ load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load(":compile.bzl", "compile_cuda_object")
 load(":providers.bzl", "ArchsInfo")
 
+visibility(["//bazel/cuda/..."])
+
 CUDA_TOOLCHAIN_TYPE = "//bazel/cuda/toolchain:toolchain_type"
 
 # Toolkit headers implicitly visible to every cuda_library, on both the nvcc
@@ -31,7 +33,7 @@ def _merged_compilation_inputs(ctx, toolkit_header_targets):
     """Read-only merge of dep/toolkit compilation contexts plus our own attrs."""
     own_includes = []
     for inc in ctx.attr.includes:
-        path = (ctx.label.package + "/" + inc).rstrip("/").removesuffix("/.")
+        path = (ctx.label.package + "/" + inc).strip("/").removesuffix("/.")
         own_includes.append(path)
         own_includes.append(ctx.bin_dir.path + "/" + path)
 

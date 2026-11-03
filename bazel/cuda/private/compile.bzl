@@ -11,6 +11,8 @@ object in the build, and are forwarded via -Xcompiler.
 
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 
+visibility(["//bazel/cuda/..."])
+
 CPP_COMPILE_ACTION_NAME = "c++-compile"
 
 # Host-toolchain features that make no sense for nvcc's host pass.

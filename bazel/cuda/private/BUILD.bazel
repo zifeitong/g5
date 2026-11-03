@@ -1,1 +1,2 @@
-package(default_visibility = ["//bazel/cuda:__subpackages__"])
+# Makes private/ a package so its .bzl files have labels; each one
+# declares its own load visibility.
