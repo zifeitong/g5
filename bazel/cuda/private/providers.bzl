@@ -1,5 +1,7 @@
 """Providers for the CUDA rules."""
 
+visibility(["//bazel/cuda/..."])
+
 CudaToolchainInfo = provider(
     doc = "Describes how to invoke nvcc against the hermetic CUDA toolkit.",
     fields = {

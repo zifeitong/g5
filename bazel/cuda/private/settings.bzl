@@ -2,6 +2,8 @@
 
 load(":providers.bzl", "ArchsInfo")
 
+visibility(["//bazel/cuda/..."])
+
 def _archs_flag_impl(ctx):
     # Values are checked in compile.bzl, which also sees per-target archs.
     return ArchsInfo(archs = ctx.build_setting_value)
