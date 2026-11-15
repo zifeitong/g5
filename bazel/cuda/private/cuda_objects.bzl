@@ -28,7 +28,7 @@ def _merged_compilation_inputs(ctx, toolkit_header_targets):
     )
 
 def _cuda_objects_impl(ctx):
-    cuda_toolchain = ctx.toolchains[CUDA_TOOLCHAIN_TYPE].cuda
+    cuda_toolchain = ctx.toolchains[CUDA_TOOLCHAIN_TYPE]
     cc_toolchain = find_cc_toolchain(ctx)
 
     archs = ctx.attr.archs or ctx.attr._default_archs[BuildSettingInfo].value

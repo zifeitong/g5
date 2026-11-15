@@ -1,12 +1,11 @@
 """The cuda_toolchain rule: binds nvcc + toolkit pieces into a Bazel toolchain."""
 
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
-load("//bazel/cuda/private:providers.bzl", "CudaToolchainInfo")
 
 def _cuda_toolchain_impl(ctx):
     nvcc = ctx.file.nvcc
 
-    info = CudaToolchainInfo(
+    return [platform_common.ToolchainInfo(
         nvcc = nvcc,
         toolkit_files = depset(ctx.files.toolkit_files + [nvcc]),
         headers = ctx.attr.headers,
@@ -14,8 +13,7 @@ def _cuda_toolchain_impl(ctx):
         cuda_std = ctx.attr.cuda_std,
         host_std = ctx.attr.host_std,
         allow_unsupported_compiler = ctx.attr.allow_unsupported_compiler,
-    )
-    return [platform_common.ToolchainInfo(cuda = info)]
+    )]
 
 cuda_toolchain = rule(
     implementation = _cuda_toolchain_impl,
