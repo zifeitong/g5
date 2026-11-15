@@ -38,6 +38,13 @@ Select architectures globally with `--//bazel/cuda:archs=sm_90a,compute_90`
 per target with the `archs` attribute. Extra flags: `copts` (nvcc),
 `host_copts` (`-Xcompiler`), `ptxasopts` (`-Xptxas`).
 
+Headers, include prefixes, defines, dependencies, additional compiler inputs,
+and features are explicit `cuda_library` attributes. `implementation_deps`
+supplies headers and defines to CUDA compilation without exposing them to
+consumers. Other `cc_library` options, such as `alwayslink`, `linkstatic`,
+and `visibility`, are forwarded; `linkstatic` defaults to `True`.
+Global `--copt` and `--cxxopt` flags are forwarded through `-Xcompiler`.
+
 ## Bumping CUDA
 
 Set `CUDA_VERSION` in `toolkit/repo.bzl`, then replace `_MANIFEST_SHA256`
@@ -70,8 +77,10 @@ transitive. `bazel build //...` stays green on the default platform.
 
 ## Layout
 
-- `cuda_library.bzl` — public API: the `cuda_library` macro, which feeds
-  the nvcc objects into a `cc_library`.
+- `cuda_library.bzl` — public API: the macro creates a private header-only
+  `cc_library`, a `cuda_objects` target, and the final `cc_library`. The
+  header library supplies Bazel's include paths and header exports to both
+  nvcc and C++ consumers; the final library packages and links the objects.
 - `toolkit/` — the CUDA toolkit itself. `repo.bzl` pins a release label and
   the sha256 of NVIDIA's manifest for it, lists the 7 of ~40 published
   components these rules need, and stages them all at a single repository root
@@ -79,18 +88,22 @@ transitive. `bazel build //...` stays green on the default platform.
   component's version, path and hash. `toolkit.BUILD.bazel` exposes the
   headers, the static runtime and the driver link stub.
 - `toolchain/` — toolchain type, `cuda_toolchain` rule, nvcc wiring, and the
-  default nvcc flags as its `compile_args` attribute.
-- `private/compile.bzl` — the single `CudaCompile` action: nvcc with
+  default nvcc flags as its `compile_args` attribute. The rule returns a
+  native `ToolchainInfo` with its fields directly accessible; field types
+  and attribute meanings are documented in `cuda_toolchain.bzl`.
+- `private/compile.bzl` — one `CudaCompile` action per source: nvcc with
   `-ccbin` pointed at the resolved cc_toolchain's clang, and host flags
-  extracted via `cc_common` and forwarded through `-Xcompiler`. Because the
+  extracted via `cc_common` and forwarded through `-Xcompiler`. Arguments
+  and common inputs are prepared once per target and shared by its actions.
+  Forwarded tool options are escaped for nvcc's parsing so embedded commas,
+  quotes and backslashes survive. Because the
   toolkit is staged as one tree, `bin/nvcc.profile` locates cicc, libdevice,
   the toolkit headers and the link stubs on its own.
 - `private/cuda_objects.bzl` — the `cuda_objects` rule, which produces the
-  `.o` files; `cc_library` owns provider assembly and the full attribute
-  surface. A rule returning `CcInfo` directly is possible — only
-  `cc_common.create_library_to_link` is allowlisted, and it is not needed —
-  and is the route to RDC, since a device-link step needs a `CudaInfo`
-  propagated beside `CcInfo` and a macro cannot return providers.
+  `.o` files and merges dependency compilation contexts through `cc_common`.
+  `cc_library` owns header export, archiving and linking.
+- `BUILD.bazel` — the architecture list flag, using bazel-skylib's
+  `string_list_flag` and `BuildSettingInfo`.
 - `platforms/` — the libstdc++ platform for CUDA builds.
 
 ## Known limitations
@@ -110,16 +123,17 @@ transitive. `bazel build //...` stays green on the default platform.
 - nvcc only (no clang-CUDA mode yet).
 - CUDA 13.4.3 pinned in `toolkit/repo.bzl`. nvcc 13.4 accepts up to `c++23`,
   and `cuda_std` (`c++23`) is the dialect its frontend is *told*. The
-  libstdc++ headers inside a `.cu` still expand at the cc toolchain's own
-  `-std`, which `compile.bzl` forwards through `-Xcompiler`, so the two
-  differ on purpose: that older dialect keeps C++20 library code EDG cannot
-  parse out of the device pass. Measured scope: a `.cu` reaching libstdc++'s
+  libstdc++ headers inside a `.cu` expand at `host_std` (`c++17`), appended
+  through `-Xcompiler` after the cc toolchain and global flags. The two
+  dialects differ on purpose: C++17 keeps library code EDG cannot parse
+  out of the device pass. Measured scope: a `.cu` reaching libstdc++'s
   `<atomic>` at C++20+ fails on `__builtin_clear_padding`, instantiated for
   `atomic<long double>` as the header is parsed — no user code needed. A TU
   containing only `#include <atomic>` reproduces it, and Thrust reaches it
   transitively. Everything else here built fine with the host pass at C++23.
-  `cuda_std` is a toolchain attribute, so there is no per-target override.
+  `cuda_std` and `host_std` are toolchain attributes. A target can override
+  the host dialect with `host_copts = ["-std=c++23"]`, subject to the
+  frontend limitation above.
 - Running anything needs an NVIDIA driver. Without `libcuda.so.1` the loader
-  fails before `main`, so the no-device guards inside the smoke binaries only
-  fire where a driver is installed but exposes no GPU; on a build machine
-  these targets are compile-and-link coverage only.
+  fails before `main`. A build machine without a driver can still provide
+  compile-and-link coverage.
