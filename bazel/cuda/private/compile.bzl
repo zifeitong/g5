@@ -56,7 +56,9 @@ def _generate_code_flags(archs):
     return flags
 
 def _quote_tool_option(flag):
-    # nvcc parses a comma-separated list, then unquotes the tool arguments.
+    # nvcc splits a comma-separated list and unquotes twice before the tool
+    # sees the argument, so escape for both passes. Verified: one pass loses
+    # the quotes in -DMSG="hi" entirely.
     for _ in range(2):
         flag = flag.replace("\\", "\\\\").replace('"', '\\"')
     return '"' + flag + '"'
@@ -103,8 +105,12 @@ def prepare_cuda_compilation(
 
     args.add_all(host_flags, map_each = _quote_tool_option, format_each = "-Xcompiler=%s")
 
-    # Pin the host dialect after toolchain/global flags, before host_copts.
-    args.add("-Xcompiler=-std=" + cuda_toolchain.host_std)
+    # Pin the host dialect, but never over an explicit --copt/--cxxopt -std,
+    # which would otherwise apply to cc_library and be dropped here. The cc
+    # toolchain's own -std does not count: host_std is meant to outrank it.
+    user_flags = ctx.fragments.cpp.copts + ctx.fragments.cpp.cxxopts
+    if not [f for f in user_flags if "-std=" in f]:
+        args.add("-Xcompiler=-std=" + cuda_toolchain.host_std)
 
     args.add_all(ctx.attr.copts)
     args.add_all(ctx.attr.host_copts, map_each = _quote_tool_option, format_each = "-Xcompiler=%s")
@@ -122,8 +128,11 @@ def prepare_cuda_compilation(
 
 def compile_cuda_object(ctx, cuda_toolchain, compilation, src):
     """Compiles one .cu file to an object file. Returns the object File."""
+    # Package-relative, so same-basename sources in different directories do
+    # not collide without the execroot path being duplicated in the output.
+    relative = src.short_path.removeprefix(ctx.label.package + "/").replace("../", "")
     obj = ctx.actions.declare_file(
-        "_objs/{}/{}.o".format(ctx.label.name, src.path.removesuffix(".cu")),
+        "_objs/{}/{}.o".format(ctx.label.name, relative.removesuffix(".cu")),
     )
     args = ctx.actions.args()
     args.add("-c", src)
