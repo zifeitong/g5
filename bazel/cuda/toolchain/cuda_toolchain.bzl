@@ -46,13 +46,12 @@ cuda_toolchain = rule(
         ),
         "cuda_std": attr.string(
             default = "c++23",
-            doc = "nvcc's -std for .cu files. nvcc 13.4 accepts up to c++23.",
+            doc = "nvcc's -std for .cu device compilation.",
         ),
         "host_std": attr.string(
-            default = "c++17",
+            default = "c++23",
             doc = "Host -std appended after the cc toolchain's flags. " +
-                  "C++17 avoids EDG's unsupported __builtin_clear_padding " +
-                  "in <atomic>. Overridable per target with host_copts.",
+                  "Overridable per target with host_copts.",
         ),
         "allow_unsupported_compiler": attr.bool(
             default = True,

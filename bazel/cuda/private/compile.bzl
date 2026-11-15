@@ -75,13 +75,13 @@ def prepare_cuda_compilation(
     )
     host_flags = _host_compile_flags(ctx, feature_configuration, cc_toolchain)
 
-    # EDG cannot parse libc++. Fail here rather than in hundreds of errors.
+    # Reject unsupported C++ library configurations early.
     for flag in host_flags:
         if "libcxx" in flag:
             fail(
                 "cuda_library requires the libstdc++ platform; " +
                 "build with --config=cuda. " +
-                "nvcc's device frontend cannot parse libc++ headers.",
+                "libc++ is not yet supported by these CUDA rules.",
             )
 
     args = ctx.actions.args()
@@ -103,8 +103,7 @@ def prepare_cuda_compilation(
 
     args.add_all(host_flags, map_each = _quote_tool_option, format_each = "-Xcompiler=%s")
 
-    # Last so it wins: -Xcompiler flags land after nvcc's own -std. Do not
-    # drop this -- it is what keeps C++20 <atomic> out of the device pass.
+    # Pin the host dialect after toolchain/global flags, before host_copts.
     args.add("-Xcompiler=-std=" + cuda_toolchain.host_std)
 
     args.add_all(ctx.attr.copts)

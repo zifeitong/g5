@@ -66,8 +66,9 @@ is not published for the host's platform.
 The supported configuration uses libstdc++. CUDA 13.5 with this repo's
 libc++ 23.1.2 still fails our mutex, format and C++23 tuple probes.
 `--config=cuda` selects `//bazel/cuda/platforms:linux`, which swaps the
-whole build onto hermetic-llvm's hermetic libstdc++ (GCC 14.2 runtime, built from source). Do
-not link libc++-built objects and libstdc++-built objects into one binary.
+whole build onto hermetic-llvm's hermetic libstdc++ (GCC 14.2 runtime, built
+from source). Do not link libc++-built objects and libstdc++-built objects
+into one binary.
 
 Outside the CUDA configuration, `cuda_library` targets are skipped as
 incompatible, and so is anything depending on one, since incompatibility is
@@ -119,7 +120,7 @@ transitive. `bazel build //...` stays green on the default platform.
   the single flat tree the toolkit relies on.
 - nvcc only (no clang-CUDA mode yet).
 - CUDA 13.5.0 is pinned in `toolkit/repo.bzl`. The `cuda_std` device dialect
-  defaults to `c++23`; the `host_std` header/host dialect defaults to `c++17`.
+  and the `host_std` header/host dialect both default to `c++23`.
   The host flag is appended after the cc toolchain and global flags, and can
   be overridden per target through `host_copts`. Both dialects are toolchain
   attributes. CUDA 13.4.3 needed host C++17 to avoid libstdc++'s
