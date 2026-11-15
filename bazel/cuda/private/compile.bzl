@@ -55,6 +55,12 @@ def _generate_code_flags(archs):
             fail("bad CUDA arch: " + arch)
     return flags
 
+def _quote_tool_option(flag):
+    # nvcc parses a comma-separated list, then unquotes the tool arguments.
+    for _ in range(2):
+        flag = flag.replace("\\", "\\\\").replace('"', '\\"')
+    return '"' + flag + '"'
+
 def compile_cuda_object(
         ctx,
         cuda_toolchain,
@@ -106,16 +112,15 @@ def compile_cuda_object(
     args.add_all(compilation_context.defines, before_each = "-D")
     args.add_all(local_defines, before_each = "-D")
 
-    # -Xcompiler= keeps each flag one token; nvcc splits on commas.
-    args.add_all(host_flags, format_each = "-Xcompiler=%s")
+    args.add_all(host_flags, map_each = _quote_tool_option, format_each = "-Xcompiler=%s")
 
     # Last so it wins: -Xcompiler flags land after nvcc's own -std. Do not
     # drop this -- it is what keeps C++20 <atomic> out of the device pass.
     args.add("-Xcompiler=-std=" + cuda_toolchain.host_std)
 
     args.add_all(copts)
-    args.add_all(host_copts, format_each = "-Xcompiler=%s")
-    args.add_all(ptxasopts, format_each = "-Xptxas=%s")
+    args.add_all(host_copts, map_each = _quote_tool_option, format_each = "-Xcompiler=%s")
+    args.add_all(ptxasopts, map_each = _quote_tool_option, format_each = "-Xptxas=%s")
 
     inputs = depset(
         direct = [src],
