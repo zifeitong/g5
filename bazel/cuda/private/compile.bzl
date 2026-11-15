@@ -44,16 +44,24 @@ def _host_compile_flags(ctx, feature_configuration, cc_toolchain):
     )
 
 def _generate_code_flags(archs):
-    flags = []
+    codes_by_arch = {}
     for arch in archs:
         if arch.startswith("sm_"):
             virtual = "compute_" + arch[len("sm_"):]
-            flags.append("--generate-code=arch={},code={}".format(virtual, arch))
         elif arch.startswith("compute_"):
-            flags.append("--generate-code=arch={},code={}".format(arch, arch))
+            virtual = arch
         else:
             fail("bad CUDA arch: " + arch)
-    return flags
+        codes = codes_by_arch.setdefault(virtual, [])
+        if arch not in codes:
+            codes.append(arch)
+    return [
+        "--generate-code=arch={},code={}".format(
+            virtual,
+            codes[0] if len(codes) == 1 else "[{}]".format(",".join(codes)),
+        )
+        for virtual, codes in codes_by_arch.items()
+    ]
 
 def _quote_tool_option(flag):
     # nvcc splits a comma-separated list and unquotes twice before the tool
