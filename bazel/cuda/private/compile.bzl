@@ -68,7 +68,7 @@ def compile_cuda_object(
         archs):
     """Compiles one .cu file to an object file. Returns the object File."""
     obj = ctx.actions.declare_file(
-        "_objs/{}/{}.o".format(ctx.label.name, src.basename.removesuffix(".cu")),
+        "_objs/{}/{}.o".format(ctx.label.name, src.path.removesuffix(".cu")),
     )
 
     feature_configuration = _host_feature_configuration(ctx, cc_toolchain)
