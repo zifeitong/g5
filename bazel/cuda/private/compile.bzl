@@ -31,10 +31,11 @@ def _host_feature_configuration(ctx, cc_toolchain):
         unsupported_features = ctx.disabled_features + _UNSUPPORTED_HOST_FEATURES,
     )
 
-def _host_compile_flags(feature_configuration, cc_toolchain):
+def _host_compile_flags(ctx, feature_configuration, cc_toolchain):
     compile_variables = cc_common.create_compile_variables(
         feature_configuration = feature_configuration,
         cc_toolchain = cc_toolchain,
+        user_compile_flags = ctx.fragments.cpp.copts + ctx.fragments.cpp.cxxopts,
         use_pic = True,
     )
     return cc_common.get_memory_inefficient_command_line(
@@ -82,7 +83,7 @@ def compile_cuda_object(
         feature_configuration = feature_configuration,
         action_name = CPP_COMPILE_ACTION_NAME,
     )
-    host_flags = _host_compile_flags(feature_configuration, cc_toolchain)
+    host_flags = _host_compile_flags(ctx, feature_configuration, cc_toolchain)
 
     # EDG cannot parse libc++. Fail here rather than in hundreds of errors.
     for flag in host_flags:
