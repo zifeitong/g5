@@ -20,11 +20,11 @@ headers and the stub libraries on its own.
 # reports the version in CUDA_VERSION while containing the other release's
 # components. The impl therefore checks CUDA_VERSION against the label the
 # manifest states about itself.
-CUDA_VERSION = "13.4.3"
+CUDA_VERSION = "13.5.0"
 
 _BASE_URL = "https://developer.download.nvidia.com/compute/cuda/redist/"
 _MANIFEST_URL = "{}redistrib_{}.json".format(_BASE_URL, CUDA_VERSION)
-_MANIFEST_SHA256 = "1420d5c676cad98a5ff423d529f116fee92f6b99559a3afdad41e782d6a11dba"
+_MANIFEST_SHA256 = "401529e951b845788177f999c0756c520c4d0db1cd4cd05c0a295e331884b596"
 # Follows the host, which the toolchains require to match the target. "sbsa"
 # is NVIDIA's aarch64 server build; rctx.os.arch is Java's, hence amd64.
 _PLATFORMS = {"amd64": "linux-x86_64", "aarch64": "linux-sbsa"}

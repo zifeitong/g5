@@ -63,12 +63,10 @@ is not published for the host's platform.
 
 ## Why `--config=cuda`
 
-nvcc's EDG-based device frontend cannot parse modern libc++ headers (this
-repo's default C++ standard library), and CUDA's own headers depend on
-libstdc++/older libc++ internals. The supported nvcc configuration is
-libstdc++ — the same choice XLA/JAX ship with. `--config=cuda` selects
-`//bazel/cuda/platforms:linux`, which swaps the whole build onto
-hermetic-llvm's hermetic libstdc++ (GCC 14.2 runtime, built from source). Do
+The supported configuration uses libstdc++. CUDA 13.5 with this repo's
+libc++ 23.1.2 still fails our mutex, format and C++23 tuple probes.
+`--config=cuda` selects `//bazel/cuda/platforms:linux`, which swaps the
+whole build onto hermetic-llvm's hermetic libstdc++ (GCC 14.2 runtime, built from source). Do
 not link libc++-built objects and libstdc++-built objects into one binary.
 
 Outside the CUDA configuration, `cuda_library` targets are skipped as
@@ -96,8 +94,7 @@ transitive. `bazel build //...` stays green on the default platform.
   extracted via `cc_common` and forwarded through `-Xcompiler`. Arguments
   and common inputs are prepared once per target and shared by its actions.
   Forwarded tool options are escaped for nvcc's parsing so embedded commas,
-  quotes and backslashes survive. Because the
-  toolkit is staged as one tree, `bin/nvcc.profile` locates cicc, libdevice,
+  quotes and backslashes survive. Because the toolkit is staged as one tree, `bin/nvcc.profile` locates cicc, libdevice,
   the toolkit headers and the link stubs on its own.
 - `private/cuda_objects.bzl` — the `cuda_objects` rule, which produces the
   `.o` files and merges dependency compilation contexts through `cc_common`.
@@ -121,19 +118,13 @@ transitive. `bazel build //...` stays green on the default platform.
   `targets/sbsa-linux/` and pass nvcc `--target-directory`, which breaks
   the single flat tree the toolkit relies on.
 - nvcc only (no clang-CUDA mode yet).
-- CUDA 13.4.3 pinned in `toolkit/repo.bzl`. nvcc 13.4 accepts up to `c++23`,
-  and `cuda_std` (`c++23`) is the dialect its frontend is *told*. The
-  libstdc++ headers inside a `.cu` expand at `host_std` (`c++17`), appended
-  through `-Xcompiler` after the cc toolchain and global flags. The two
-  dialects differ on purpose: C++17 keeps library code EDG cannot parse
-  out of the device pass. Measured scope: a `.cu` reaching libstdc++'s
-  `<atomic>` at C++20+ fails on `__builtin_clear_padding`, instantiated for
-  `atomic<long double>` as the header is parsed — no user code needed. A TU
-  containing only `#include <atomic>` reproduces it, and Thrust reaches it
-  transitively. Everything else here built fine with the host pass at C++23.
-  `cuda_std` and `host_std` are toolchain attributes. A target can override
-  the host dialect with `host_copts = ["-std=c++23"]`, subject to the
-  frontend limitation above.
+- CUDA 13.5.0 is pinned in `toolkit/repo.bzl`. The `cuda_std` device dialect
+  defaults to `c++23`; the `host_std` header/host dialect defaults to `c++17`.
+  The host flag is appended after the cc toolchain and global flags, and can
+  be overridden per target through `host_copts`. Both dialects are toolchain
+  attributes. CUDA 13.4.3 needed host C++17 to avoid libstdc++'s
+  `__builtin_clear_padding` failure in `<atomic>` and Thrust. CUDA 13.5
+  passes those probes at C++20 and C++23.
 - Running anything needs an NVIDIA driver. Without `libcuda.so.1` the loader
   fails before `main`. A build machine without a driver can still provide
   compile-and-link coverage.
