@@ -35,8 +35,7 @@ bazel build //path/to:app
 
 Select architectures globally with `--//bazel/cuda:archs=sm_90a,compute_90`
 (`sm_XX` emits SASS, `compute_XX` embeds PTX for forward compatibility) or
-per target with the `archs` attribute. Matching SASS/PTX requests, such as
-`sm_90` and `compute_90`, share one nvcc code-generation entry. Extra flags: `copts` (nvcc),
+per target with the `archs` attribute. Extra flags: `copts` (nvcc),
 `host_copts` (`-Xcompiler`), `ptxasopts` (`-Xptxas`).
 
 Headers, include prefixes, defines, dependencies, additional compiler inputs,
