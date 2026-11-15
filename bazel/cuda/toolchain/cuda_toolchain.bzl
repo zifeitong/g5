@@ -3,15 +3,8 @@
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("//bazel/cuda/private:providers.bzl", "CudaToolchainInfo")
 
-def _single_executable(target, what):
-    files = target.files.to_list()
-    executables = [f for f in files if f.basename == what] or files
-    if len(executables) != 1:
-        fail("expected exactly one file for {}, got {}".format(what, files))
-    return executables[0]
-
 def _cuda_toolchain_impl(ctx):
-    nvcc = _single_executable(ctx.attr.nvcc, "nvcc")
+    nvcc = ctx.file.nvcc
 
     info = CudaToolchainInfo(
         nvcc = nvcc,
@@ -29,7 +22,7 @@ cuda_toolchain = rule(
     attrs = {
         "nvcc": attr.label(
             mandatory = True,
-            allow_files = True,
+            allow_single_file = True,
             cfg = "exec",
             doc = "The nvcc driver executable.",
         ),
