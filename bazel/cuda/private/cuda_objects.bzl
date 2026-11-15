@@ -14,11 +14,11 @@ of the whole transitive closure, which means propagating a CudaInfo next to
 CcInfo, and a macro cannot return providers.
 """
 
+load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load(":compile.bzl", "compile_cuda_object")
-load(":providers.bzl", "ArchsInfo")
 
 visibility(["//bazel/cuda/..."])
 
@@ -41,7 +41,7 @@ def _cuda_objects_impl(ctx):
     cuda_toolchain = ctx.toolchains[CUDA_TOOLCHAIN_TYPE].cuda
     cc_toolchain = find_cc_toolchain(ctx)
 
-    archs = ctx.attr.archs or ctx.attr._default_archs[ArchsInfo].archs
+    archs = ctx.attr.archs or ctx.attr._default_archs[BuildSettingInfo].value
     if not archs:
         fail("no CUDA archs: set --//bazel/cuda:archs or the archs attribute")
 
@@ -77,7 +77,7 @@ cuda_objects = rule(
         "archs": attr.string_list(),
         "_default_archs": attr.label(
             default = Label("//bazel/cuda:archs"),
-            providers = [ArchsInfo],
+            providers = [BuildSettingInfo],
         ),
     },
     fragments = ["cpp"],

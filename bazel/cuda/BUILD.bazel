@@ -1,10 +1,10 @@
-load("//bazel/cuda/private:settings.bzl", "archs_flag")
+load("@bazel_skylib//rules:common_settings.bzl", "string_list_flag")
 
 package(default_visibility = ["//visibility:public"])
 
 # Build for Hopper and Blackwell by default.
 # Override with --//bazel/cuda:archs=... or at the per-target level.
-archs_flag(
+string_list_flag(
     name = "archs",
     build_setting_default = [
         "sm_90a",

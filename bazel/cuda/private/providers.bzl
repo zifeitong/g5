@@ -14,8 +14,3 @@ CudaToolchainInfo = provider(
         "allow_unsupported_compiler": "bool: pass --allow-unsupported-compiler for host compilers newer than nvcc's support matrix.",
     },
 )
-
-ArchsInfo = provider(
-    doc = "Parsed value of the --//bazel/cuda:archs build flag.",
-    fields = {"archs": "list[str]: e.g. [\"sm_90a\", \"sm_100a\"]"},
-)
