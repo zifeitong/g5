@@ -63,13 +63,9 @@ cuda_objects = rule(
         "host_copts": attr.string_list(),
         "ptxasopts": attr.string_list(),
         "archs": attr.string_list(),
-        "libcxx_overlay": attr.label(
+        "libcxx_compat": attr.label(
             allow_single_file = True,
-            doc = "nvcc-only tuple-header overlay; absent for libstdc++.",
-        ),
-        "_libcxx_compat": attr.label(
-            default = Label("//bazel/cuda/private:libcxx_compat.h"),
-            allow_single_file = True,
+            doc = "nvcc-only libc++ compatibility pre-include; absent for libstdc++.",
         ),
         "_default_archs": attr.label(
             default = Label("//bazel/cuda:archs"),

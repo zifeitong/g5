@@ -77,8 +77,8 @@ def cuda_library(
     cuda_objects(
         name = objects_name,
         srcs = srcs,
-        libcxx_overlay = select({
-            "@llvm//runtimes/cxxstdlib:libcxx_linux": "//bazel/cuda/private:libcxx_overlay",
+        libcxx_compat = select({
+            "@llvm//runtimes/cxxstdlib:libcxx_linux": "//bazel/cuda/private:libcxx_compat.h",
             "//conditions:default": None,
         }),
         deps = [":" + headers_name] + implementation_deps,

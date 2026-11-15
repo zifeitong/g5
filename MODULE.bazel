@@ -24,6 +24,7 @@ http_jar(
 
 # Enable hermetic LLVM toolchain
 llvm = use_extension("@llvm//extensions:llvm.bzl", "llvm")
+llvm.version(llvm_version = "22.1.8")
 use_repo(llvm, "llvm-project")
 
 register_toolchains("@llvm//toolchain:all")

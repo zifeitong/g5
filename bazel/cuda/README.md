@@ -68,21 +68,16 @@ for libstdc++ (GCC 14.2); it selects `//bazel/cuda/platforms:linux` for the
 whole build. Do not mix objects built against the two standard libraries in
 one binary.
 
-CUDA 13.5 needs three workarounds for libc++ 23.1.2, applied only to nvcc
-compilation:
+LLVM 22.1.8 is selected in `MODULE.bazel` for both the compiler and its
+runtimes. With CUDA 13.5, our libc++ probes need only an nvcc pre-include
+annotating its signbit templates for device use in C++17/20. C++23 passes that probe without
+the annotations, but shares the same compatibility header.
 
-- A pre-include disables mutex capability attributes that cudafe cannot expand.
-  This removes static analysis annotations, not locking operations.
-- The same header annotates libc++ signbit templates for device use and defines
-  the non-template overloads CUDA declares, which libc++ floating-point
-  formatting otherwise calls without a definition.
-- A generated tuple-header overlay expands a named comparison concept instead
-  of an inline requires expression, avoiding nvcc's pack-expansion parser bug.
-  The original LLVM header supplies the rest of the file.
-
-Native C++ compilation uses the original headers. libstdc++ gets no compatibility
-headers. Revalidate these workarounds when updating LLVM or CUDA; the pre-include
-checks the libc++ version. CUDA targets require Linux.
+Unlike libc++ 23.1.2, this version needs no tuple-header overlay, mutex
+capability-attribute macros, or definitions for CUDA's non-template signbit
+overloads. Native C++ compilation uses the original headers. libstdc++ gets no
+compatibility header. Revalidate the remaining workaround when updating LLVM
+or CUDA; the pre-include checks the libc++ version. CUDA targets require Linux.
 
 ## Layout
 
@@ -112,7 +107,7 @@ checks the libc++ version. CUDA targets require Linux.
   `cc_library` owns header export, archiving and linking.
 - `BUILD.bazel` — the architecture list flag, using bazel-skylib's
   `string_list_flag` and `BuildSettingInfo`.
-- `private/libcxx.bzl` and `libcxx_compat.h` — nvcc-only libc++ compatibility.
+- `private/libcxx_compat.h` — nvcc-only libc++ signbit annotations.
 - `platforms/` — the optional libstdc++ platform for CUDA builds.
 
 ## Known limitations
