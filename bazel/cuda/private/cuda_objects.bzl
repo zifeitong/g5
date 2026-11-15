@@ -31,11 +31,12 @@ def _cuda_objects_impl(ctx):
     cuda_toolchain = ctx.toolchains[CUDA_TOOLCHAIN_TYPE]
     cc_toolchain = find_cc_toolchain(ctx)
 
+    if not ctx.files.srcs:
+        return [DefaultInfo(files = depset())]
+
     archs = ctx.attr.archs or ctx.attr._default_archs[BuildSettingInfo].value
     if not archs:
         fail("no CUDA archs: set --//bazel/cuda:archs or the archs attribute")
-    if not ctx.files.srcs:
-        return [DefaultInfo(files = depset())]
 
     compilation = prepare_cuda_compilation(
         ctx,

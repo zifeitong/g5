@@ -16,8 +16,6 @@ def _cuda_toolchain_impl(ctx):
         compile_args = ctx.attr.compile_args,
         # str: nvcc's device dialect, passed through -std.
         cuda_std = ctx.attr.cuda_std,
-        # str: host dialect after toolchain/global flags, before host_copts.
-        host_std = ctx.attr.host_std,
         # bool: allow host compiler versions newer than nvcc's support matrix.
         allow_unsupported_compiler = ctx.attr.allow_unsupported_compiler,
     )]
@@ -47,11 +45,6 @@ cuda_toolchain = rule(
         "cuda_std": attr.string(
             default = "c++23",
             doc = "nvcc's -std for .cu device compilation.",
-        ),
-        "host_std": attr.string(
-            default = "c++23",
-            doc = "Host -std appended after the cc toolchain's flags. " +
-                  "Overridable per target with host_copts.",
         ),
         "allow_unsupported_compiler": attr.bool(
             default = True,

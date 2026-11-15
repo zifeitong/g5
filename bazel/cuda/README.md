@@ -119,13 +119,14 @@ transitive. `bazel build //...` stays green on the default platform.
   `targets/sbsa-linux/` and pass nvcc `--target-directory`, which breaks
   the single flat tree the toolkit relies on.
 - nvcc only (no clang-CUDA mode yet).
-- CUDA 13.5.0 is pinned in `toolkit/repo.bzl`. The `cuda_std` device dialect
-  and the `host_std` header/host dialect both default to `c++23`.
-  The host flag is appended after the cc toolchain and global flags, and can
-  be overridden per target through `host_copts`. Both dialects are toolchain
-  attributes. CUDA 13.4.3 needed host C++17 to avoid libstdc++'s
-  `__builtin_clear_padding` failure in `<atomic>` and Thrust. CUDA 13.5
-  passes those probes at C++20 and C++23.
+- CUDA 13.5.0 is pinned in `toolkit/repo.bzl`. `cuda_std`, a toolchain
+  attribute defaulting to `c++23`, is the device dialect nvcc is told to use.
+  The host dialect is whatever the cc toolchain and the global
+  `--copt`/`--cxxopt` produce -- `.bazelrc` sets `-std=c++23` -- so the two
+  are independent: a global `-std` moves the host pass and leaves the device
+  pass alone. `host_copts` overrides the host dialect per target. CUDA 13.4.3
+  needed host C++17 to avoid libstdc++'s `__builtin_clear_padding` failure in
+  `<atomic>` and Thrust; CUDA 13.5 passes those probes at C++20 and C++23.
 - Running anything needs an NVIDIA driver. Without `libcuda.so.1` the loader
   fails before `main`. A build machine without a driver can still provide
   compile-and-link coverage.

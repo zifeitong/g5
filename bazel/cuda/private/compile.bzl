@@ -77,15 +77,6 @@ def prepare_cuda_compilation(
     )
     host_flags = _host_compile_flags(ctx, feature_configuration, cc_toolchain)
 
-    # Reject unsupported C++ library configurations early.
-    for flag in host_flags:
-        if "libcxx" in flag:
-            fail(
-                "cuda_library requires the libstdc++ platform; " +
-                "build with --config=cuda. " +
-                "libc++ is not yet supported by these CUDA rules.",
-            )
-
     args = ctx.actions.args()
 
     # One flat toolkit tree, so nvcc.profile finds cicc, libdevice and headers.
@@ -104,13 +95,6 @@ def prepare_cuda_compilation(
     args.add_all(ctx.attr.local_defines, before_each = "-D")
 
     args.add_all(host_flags, map_each = _quote_tool_option, format_each = "-Xcompiler=%s")
-
-    # Pin the host dialect, but never over an explicit --copt/--cxxopt -std,
-    # which would otherwise apply to cc_library and be dropped here. The cc
-    # toolchain's own -std does not count: host_std is meant to outrank it.
-    user_flags = ctx.fragments.cpp.copts + ctx.fragments.cpp.cxxopts
-    if not [f for f in user_flags if "-std=" in f]:
-        args.add("-Xcompiler=-std=" + cuda_toolchain.host_std)
 
     args.add_all(ctx.attr.copts)
     args.add_all(ctx.attr.host_copts, map_each = _quote_tool_option, format_each = "-Xcompiler=%s")
