@@ -15,6 +15,7 @@ def cuda_library(
         textual_hdrs = [],
         deps = [],
         implementation_deps = [],
+        additional_compiler_inputs = [],
         includes = [],
         defines = [],
         local_defines = [],
@@ -36,6 +37,7 @@ def cuda_library(
         textual_hdrs: textual headers available to srcs and consumers.
         deps: dependencies available to srcs and consumers.
         implementation_deps: dependencies whose headers are private to srcs.
+        additional_compiler_inputs: extra files available during compilation.
         includes: exported include directories, relative to this package.
         defines: defines for srcs and consumers.
         local_defines: defines for srcs only.
@@ -65,6 +67,7 @@ def cuda_library(
         hdrs = hdrs,
         textual_hdrs = textual_hdrs,
         deps = deps + CUDA_TOOLKIT_HDRS,
+        additional_compiler_inputs = additional_compiler_inputs,
         includes = includes,
         defines = defines,
         include_prefix = include_prefix,
@@ -75,6 +78,7 @@ def cuda_library(
         name = objects_name,
         srcs = srcs,
         deps = [":" + headers_name] + implementation_deps,
+        additional_compiler_inputs = additional_compiler_inputs,
         local_defines = local_defines,
         copts = copts,
         host_copts = host_copts,
@@ -87,6 +91,7 @@ def cuda_library(
         srcs = [":" + objects_name],
         deps = [":" + headers_name],
         implementation_deps = implementation_deps,
+        additional_compiler_inputs = additional_compiler_inputs,
         local_defines = local_defines,
         features = features,
         target_compatible_with = compatible_with,

@@ -69,6 +69,7 @@ cuda_objects = rule(
     attrs = {
         "srcs": attr.label_list(allow_files = [".cu"]),
         "deps": attr.label_list(providers = [CcInfo]),
+        "additional_compiler_inputs": attr.label_list(allow_files = True),
         "local_defines": attr.string_list(),
         "copts": attr.string_list(),
         "host_copts": attr.string_list(),

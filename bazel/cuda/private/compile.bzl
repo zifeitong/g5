@@ -124,7 +124,7 @@ def compile_cuda_object(
     args.add_all(ptxasopts, map_each = _quote_tool_option, format_each = "-Xptxas=%s")
 
     inputs = depset(
-        direct = [src],
+        direct = [src] + ctx.files.additional_compiler_inputs,
         transitive = [
             compilation_context.headers,
             cuda_toolchain.toolkit_files,
