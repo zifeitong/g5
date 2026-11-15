@@ -25,13 +25,18 @@ CUDA_VERSION = "13.5.0"
 _BASE_URL = "https://developer.download.nvidia.com/compute/cuda/redist/"
 _MANIFEST_URL = "{}redistrib_{}.json".format(_BASE_URL, CUDA_VERSION)
 _MANIFEST_SHA256 = "401529e951b845788177f999c0756c520c4d0db1cd4cd05c0a295e331884b596"
+
 # Follows the host, which the toolchains require to match the target. "sbsa"
 # is NVIDIA's aarch64 server build; rctx.os.arch is Java's, hence amd64.
 _PLATFORMS = {"amd64": "linux-x86_64", "aarch64": "linux-sbsa"}
 _MANIFEST = "redistrib.json"
 
 _COMPONENTS = [
-    "cccl", "cuda_crt", "cuda_cudart", "cuda_nvcc", "cuda_profiler_api",
+    "cccl",
+    "cuda_crt",
+    "cuda_cudart",
+    "cuda_nvcc",
+    "cuda_profiler_api",
     # libculibos.a, needed by the static runtime. Its own component since
     # CUDA 13; before that it shipped inside cuda_cudart.
     "cuda_culibos",
@@ -64,6 +69,7 @@ def _cuda_toolkit_repository_impl(rctx):
         component = manifest[name]
         if platform not in component:
             fail("{} has no {} build in CUDA {}".format(name, platform, CUDA_VERSION))
+
         # Every component NVIDIA publishes uses its archive's basename, minus
         # the .tar.xz suffix, as the single top-level directory inside it.
         relative_path = component[platform]["relative_path"]
