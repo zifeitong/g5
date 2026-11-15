@@ -61,7 +61,7 @@ def cuda_library(
         archs = archs,
         target_compatible_with = target_compatible_with + incompatible_unless_libstdcxx(),
         visibility = ["//visibility:private"],
-        **{k: v for k, v in kwargs.items() if k in ["tags", "testonly"]}
+        **{k: v for k, v in kwargs.items() if k in ["tags", "testonly", "features"]}
     )
     cc_library(
         name = name,
