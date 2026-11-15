@@ -49,8 +49,9 @@ def cuda_library(
         archs: CUDA archs; defaults to --//bazel/cuda:archs.
         features: toolchain features for CUDA and C++ actions.
         target_compatible_with: additional target platform constraints.
-        **kwargs: remaining cc_library attributes (alwayslink, linkstatic, etc.).
+        **kwargs: remaining cc_library attributes; linkstatic defaults to True.
     """
+    kwargs.setdefault("linkstatic", True)
     compatible_with = target_compatible_with + incompatible_unless_libstdcxx()
     private_kwargs = dict(
         {k: v for k, v in kwargs.items() if k in ["tags", "testonly"]},
