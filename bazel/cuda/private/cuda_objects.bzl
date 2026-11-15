@@ -1,24 +1,14 @@
 """The nvcc rule behind cuda_library: one .o per .cu, nothing else.
 
-It reads dep CcInfos to assemble include paths, defines and headers, including
-the private header library created by cuda_library. The wrapping cc_library
-owns archiving and header export. CcInfo, cc_common.compile,
-create_compilation_outputs and create_linking_context_from_compilation_outputs
-are all callable from a root-module .bzl and the result links and runs. Only
-cc_common.create_library_to_link is allowlisted private API
-(_PRIVATE_STARLARKIFICATION_ALLOWLIST), and nothing here needs it.
-
-So this could return a CcInfo directly. The reason it stays a rule feeding a
-macro is relocatable device code: a device-link step needs the device objects
-of the whole transitive closure, which means propagating a CudaInfo next to
-CcInfo, and a macro cannot return providers.
+Reads compilation contexts from dependencies and the private header library.
+The wrapping cc_library owns archiving, linking and header export.
 """
 
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
-load(":compile.bzl", "compile_cuda_object")
+load(":compile.bzl", "compile_cuda_object", "prepare_cuda_compilation")
 
 visibility(["//bazel/cuda/..."])
 
@@ -44,22 +34,19 @@ def _cuda_objects_impl(ctx):
     archs = ctx.attr.archs or ctx.attr._default_archs[BuildSettingInfo].value
     if not archs:
         fail("no CUDA archs: set --//bazel/cuda:archs or the archs attribute")
+    if not ctx.files.srcs:
+        return [DefaultInfo(files = depset())]
 
-    compilation_inputs = _merged_compilation_inputs(ctx, cuda_toolchain.headers)
+    compilation = prepare_cuda_compilation(
+        ctx,
+        cuda_toolchain,
+        cc_toolchain,
+        _merged_compilation_inputs(ctx, cuda_toolchain.headers),
+        archs,
+    )
 
     objects = [
-        compile_cuda_object(
-            ctx,
-            cuda_toolchain,
-            cc_toolchain,
-            src,
-            compilation_inputs,
-            ctx.attr.local_defines,
-            ctx.attr.copts,
-            ctx.attr.host_copts,
-            ctx.attr.ptxasopts,
-            archs,
-        )
+        compile_cuda_object(ctx, cuda_toolchain, compilation, src)
         for src in ctx.files.srcs
     ]
     return [DefaultInfo(files = depset(objects))]

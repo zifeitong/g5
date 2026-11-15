@@ -9,11 +9,10 @@ so CUDA objects see the same sysroot/libstdc++/ABI configuration as every other
 object in the build, and are forwarded via -Xcompiler.
 """
 
+load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 
 visibility(["//bazel/cuda/..."])
-
-CPP_COMPILE_ACTION_NAME = "c++-compile"
 
 # Host-toolchain features that make no sense for nvcc's host pass.
 _UNSUPPORTED_HOST_FEATURES = [
@@ -40,7 +39,7 @@ def _host_compile_flags(ctx, feature_configuration, cc_toolchain):
     )
     return cc_common.get_memory_inefficient_command_line(
         feature_configuration = feature_configuration,
-        action_name = CPP_COMPILE_ACTION_NAME,
+        action_name = ACTION_NAMES.cpp_compile,
         variables = compile_variables,
     )
 
@@ -62,26 +61,17 @@ def _quote_tool_option(flag):
         flag = flag.replace("\\", "\\\\").replace('"', '\\"')
     return '"' + flag + '"'
 
-def compile_cuda_object(
+def prepare_cuda_compilation(
         ctx,
         cuda_toolchain,
         cc_toolchain,
-        src,
         compilation_context,
-        local_defines,
-        copts,
-        host_copts,
-        ptxasopts,
         archs):
-    """Compiles one .cu file to an object file. Returns the object File."""
-    obj = ctx.actions.declare_file(
-        "_objs/{}/{}.o".format(ctx.label.name, src.path.removesuffix(".cu")),
-    )
-
+    """Prepares the arguments and inputs shared by a target's compile actions."""
     feature_configuration = _host_feature_configuration(ctx, cc_toolchain)
     host_compiler = cc_common.get_tool_for_action(
         feature_configuration = feature_configuration,
-        action_name = CPP_COMPILE_ACTION_NAME,
+        action_name = ACTION_NAMES.cpp_compile,
     )
     host_flags = _host_compile_flags(ctx, feature_configuration, cc_toolchain)
 
@@ -95,8 +85,6 @@ def compile_cuda_object(
             )
 
     args = ctx.actions.args()
-    args.add("-c", src)
-    args.add("-o", obj)
 
     # One flat toolkit tree, so nvcc.profile finds cicc, libdevice and headers.
     args.add("-ccbin=" + host_compiler)
@@ -111,7 +99,7 @@ def compile_cuda_object(
     args.add_all(compilation_context.system_includes, before_each = "-isystem")
     args.add_all(compilation_context.external_includes, before_each = "-isystem")
     args.add_all(compilation_context.defines, before_each = "-D")
-    args.add_all(local_defines, before_each = "-D")
+    args.add_all(ctx.attr.local_defines, before_each = "-D")
 
     args.add_all(host_flags, map_each = _quote_tool_option, format_each = "-Xcompiler=%s")
 
@@ -119,25 +107,35 @@ def compile_cuda_object(
     # drop this -- it is what keeps C++20 <atomic> out of the device pass.
     args.add("-Xcompiler=-std=" + cuda_toolchain.host_std)
 
-    args.add_all(copts)
-    args.add_all(host_copts, map_each = _quote_tool_option, format_each = "-Xcompiler=%s")
-    args.add_all(ptxasopts, map_each = _quote_tool_option, format_each = "-Xptxas=%s")
+    args.add_all(ctx.attr.copts)
+    args.add_all(ctx.attr.host_copts, map_each = _quote_tool_option, format_each = "-Xcompiler=%s")
+    args.add_all(ctx.attr.ptxasopts, map_each = _quote_tool_option, format_each = "-Xptxas=%s")
 
     inputs = depset(
-        direct = [src] + ctx.files.additional_compiler_inputs,
+        direct = ctx.files.additional_compiler_inputs,
         transitive = [
             compilation_context.headers,
             cuda_toolchain.toolkit_files,
             cc_toolchain.all_files,
         ],
     )
+    return struct(args = args, inputs = inputs)
+
+def compile_cuda_object(ctx, cuda_toolchain, compilation, src):
+    """Compiles one .cu file to an object file. Returns the object File."""
+    obj = ctx.actions.declare_file(
+        "_objs/{}/{}.o".format(ctx.label.name, src.path.removesuffix(".cu")),
+    )
+    args = ctx.actions.args()
+    args.add("-c", src)
+    args.add("-o", obj)
 
     ctx.actions.run(
         mnemonic = "CudaCompile",
         progress_message = "Compiling CUDA " + src.short_path,
         executable = cuda_toolchain.nvcc,
-        arguments = [args],
-        inputs = inputs,
+        arguments = [args, compilation.args],
+        inputs = depset([src], transitive = [compilation.inputs]),
         outputs = [obj],
         toolchain = Label("//bazel/cuda/toolchain:toolchain_type"),
     )
