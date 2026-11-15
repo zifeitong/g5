@@ -1,12 +1,10 @@
 """The nvcc rule behind cuda_library: one .o per .cu, nothing else.
 
-It reads dep CcInfos to assemble include paths, defines and headers, and
-leaves provider assembly, archiving and header export to the cc_library that
-cuda_library wraps it in. That split buys cc_library's whole attribute surface
-(alwayslink, linkstatic, implementation_deps, ...) for free; it is not forced
-by Bazel. CcInfo, cc_common.compile, create_compilation_outputs and
-create_linking_context_from_compilation_outputs are all callable from a
-root-module .bzl and the result links and runs. Only
+It reads dep CcInfos to assemble include paths, defines and headers, including
+the private header library created by cuda_library. The wrapping cc_library
+owns archiving and header export. CcInfo, cc_common.compile,
+create_compilation_outputs and create_linking_context_from_compilation_outputs
+are all callable from a root-module .bzl and the result links and runs. Only
 cc_common.create_library_to_link is allowlisted private API
 (_PRIVATE_STARLARKIFICATION_ALLOWLIST), and nothing here needs it.
 
@@ -17,6 +15,7 @@ CcInfo, and a macro cannot return providers.
 """
 
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
+load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load(":compile.bzl", "compile_cuda_object")
 load(":providers.bzl", "ArchsInfo")
@@ -30,30 +29,12 @@ CUDA_TOOLCHAIN_TYPE = "//bazel/cuda/toolchain:toolchain_type"
 CUDA_TOOLKIT_HDRS = [Label("@cuda_toolkit//:headers")]
 
 def _merged_compilation_inputs(ctx, toolkit_header_targets):
-    """Read-only merge of dep/toolkit compilation contexts plus our own attrs."""
-    own_includes = []
-    for inc in ctx.attr.includes:
-        path = (ctx.label.package + "/" + inc).strip("/").removesuffix("/.")
-        own_includes.append(path)
-        own_includes.append(ctx.bin_dir.path + "/" + path)
-
-    contexts = [
-        dep[CcInfo].compilation_context
-        for dep in list(ctx.attr.deps) + list(toolkit_header_targets)
-    ]
-    return struct(
-        headers = depset(
-            ctx.files.hdrs,
-            transitive = [c.headers for c in contexts],
-        ),
-        includes = depset(own_includes, transitive = [c.includes for c in contexts]),
-        quote_includes = depset(
-            [".", ctx.bin_dir.path],
-            transitive = [c.quote_includes for c in contexts],
-        ),
-        system_includes = depset(transitive = [c.system_includes for c in contexts]),
-        external_includes = depset(transitive = [c.external_includes for c in contexts]),
-        defines = depset(ctx.attr.defines, transitive = [c.defines for c in contexts]),
+    """Read-only merge of dep/toolkit compilation contexts."""
+    return cc_common.merge_compilation_contexts(
+        compilation_contexts = [
+            dep[CcInfo].compilation_context
+            for dep in list(ctx.attr.deps) + list(toolkit_header_targets)
+        ],
     )
 
 def _cuda_objects_impl(ctx):
@@ -87,10 +68,7 @@ cuda_objects = rule(
     implementation = _cuda_objects_impl,
     attrs = {
         "srcs": attr.label_list(allow_files = [".cu"]),
-        "hdrs": attr.label_list(allow_files = True),
         "deps": attr.label_list(providers = [CcInfo]),
-        "includes": attr.string_list(),
-        "defines": attr.string_list(),
         "local_defines": attr.string_list(),
         "copts": attr.string_list(),
         "host_copts": attr.string_list(),
