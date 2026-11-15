@@ -1,0 +1,11 @@
+load(":libcxx.bzl", "libcxx_overlay")
+
+libcxx_overlay(
+    name = "libcxx_overlay",
+    visibility = ["//:__subpackages__"],
+)
+
+exports_files(
+    ["libcxx_compat.h"],
+    visibility = ["//bazel/cuda:__subpackages__"],
+)

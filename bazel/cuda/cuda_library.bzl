@@ -5,7 +5,6 @@ load(
     "//bazel/cuda/private:cuda_objects.bzl",
     "CUDA_TOOLKIT_HDRS",
     "cuda_objects",
-    "incompatible_unless_libstdcxx",
 )
 
 def cuda_library(
@@ -52,7 +51,7 @@ def cuda_library(
         **kwargs: remaining cc_library attributes; linkstatic defaults to True.
     """
     kwargs.setdefault("linkstatic", True)
-    compatible_with = target_compatible_with + incompatible_unless_libstdcxx()
+    compatible_with = target_compatible_with + ["@platforms//os:linux"]
     private_kwargs = dict(
         {k: v for k, v in kwargs.items() if k in ["tags", "testonly"]},
         features = features,
@@ -77,6 +76,10 @@ def cuda_library(
     cuda_objects(
         name = objects_name,
         srcs = srcs,
+        libcxx_overlay = select({
+            "@llvm//runtimes/cxxstdlib:libcxx_linux": "//bazel/cuda/private:libcxx_overlay",
+            "//conditions:default": None,
+        }),
         deps = [":" + headers_name] + implementation_deps,
         additional_compiler_inputs = additional_compiler_inputs,
         local_defines = local_defines,

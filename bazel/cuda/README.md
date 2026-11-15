@@ -2,8 +2,8 @@
 
 Hermetic CUDA compilation: nvcc from NVIDIA's pinned redistributable
 archives, driving hermetic-llvm's clang as host compiler, against
-hermetic-llvm's hermetic libstdc++/GCC runtime. No system CUDA, compiler, or
-sysroot.
+hermetic-llvm's hermetic libc++ runtime by default. libstdc++ is also
+supported. No system CUDA, compiler, or sysroot.
 
 ## Usage
 
@@ -30,7 +30,7 @@ cc_binary(
 Build with:
 
 ```sh
-bazel build --config=cuda //path/to:app
+bazel build //path/to:app
 ```
 
 Select architectures globally with `--//bazel/cuda:archs=sm_90a,compute_90`
@@ -61,18 +61,28 @@ versions, paths and hashes all come from the manifest, and the fetch fails
 with a clear message if a listed component is missing from the new release or
 is not published for the host's platform.
 
-## Why `--config=cuda`
+## C++ standard library
 
-The supported configuration uses libstdc++. CUDA 13.5 with this repo's
-libc++ 23.1.2 still fails our mutex, format and C++23 tuple probes.
-`--config=cuda` selects `//bazel/cuda/platforms:linux`, which swaps the
-whole build onto hermetic-llvm's hermetic libstdc++ (GCC 14.2 runtime, built
-from source). Do not link libc++-built objects and libstdc++-built objects
-into one binary.
+CUDA builds use the default libc++ platform. `--config=cuda` remains available
+for libstdc++ (GCC 14.2); it selects `//bazel/cuda/platforms:linux` for the
+whole build. Do not mix objects built against the two standard libraries in
+one binary.
 
-Outside the CUDA configuration, `cuda_library` targets are skipped as
-incompatible, and so is anything depending on one, since incompatibility is
-transitive. `bazel build //...` stays green on the default platform.
+CUDA 13.5 needs three workarounds for libc++ 23.1.2, applied only to nvcc
+compilation:
+
+- A pre-include disables mutex capability attributes that cudafe cannot expand.
+  This removes static analysis annotations, not locking operations.
+- The same header annotates libc++ signbit templates for device use and defines
+  the non-template overloads CUDA declares, which libc++ floating-point
+  formatting otherwise calls without a definition.
+- A generated tuple-header overlay expands a named comparison concept instead
+  of an inline requires expression, avoiding nvcc's pack-expansion parser bug.
+  The original LLVM header supplies the rest of the file.
+
+Native C++ compilation uses the original headers. libstdc++ gets no compatibility
+headers. Revalidate these workarounds when updating LLVM or CUDA; the pre-include
+checks the libc++ version. CUDA targets require Linux.
 
 ## Layout
 
@@ -102,10 +112,14 @@ transitive. `bazel build //...` stays green on the default platform.
   `cc_library` owns header export, archiving and linking.
 - `BUILD.bazel` — the architecture list flag, using bazel-skylib's
   `string_list_flag` and `BuildSettingInfo`.
-- `platforms/` — the libstdc++ platform for CUDA builds.
+- `private/libcxx.bzl` and `libcxx_compat.h` — nvcc-only libc++ compatibility.
+- `platforms/` — the optional libstdc++ platform for CUDA builds.
 
 ## Known limitations
 
+- With libstdc++ 14.2, nvcc 13.5 rejects `std::tuple{...}` class template
+  argument deduction in C++20/23. Explicit tuple types work; libc++ passes
+  the deduction probe.
 - No RDC / device linking / DLTO (not needed for whole-program kernels,
   CUTLASS, Thrust, or the NCCL device API; NVSHMEM device-API code from
   source would need it). `libcudadevrt.a` and `libculibos.a` are already
@@ -127,6 +141,6 @@ transitive. `bazel build //...` stays green on the default platform.
   pass alone. `host_copts` overrides the host dialect per target. CUDA 13.4.3
   needed host C++17 to avoid libstdc++'s `__builtin_clear_padding` failure in
   `<atomic>` and Thrust; CUDA 13.5 passes those probes at C++20 and C++23.
-- Running anything needs an NVIDIA driver. Without `libcuda.so.1` the loader
-  fails before `main`. A build machine without a driver can still provide
-  compile-and-link coverage.
+- Binaries linked through `@cuda_toolkit//:cudart_static` need an NVIDIA
+  driver: without `libcuda.so.1` the loader fails before `main`. Host-only
+  checks can omit the driver dependency; GPU execution still needs it.

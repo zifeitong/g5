@@ -63,6 +63,14 @@ cuda_objects = rule(
         "host_copts": attr.string_list(),
         "ptxasopts": attr.string_list(),
         "archs": attr.string_list(),
+        "libcxx_overlay": attr.label(
+            allow_single_file = True,
+            doc = "nvcc-only tuple-header overlay; absent for libstdc++.",
+        ),
+        "_libcxx_compat": attr.label(
+            default = Label("//bazel/cuda/private:libcxx_compat.h"),
+            allow_single_file = True,
+        ),
         "_default_archs": attr.label(
             default = Label("//bazel/cuda:archs"),
             providers = [BuildSettingInfo],
@@ -71,12 +79,3 @@ cuda_objects = rule(
     fragments = ["cpp"],
     toolchains = [CUDA_TOOLCHAIN_TYPE] + use_cc_toolchain(),
 )
-
-def incompatible_unless_libstdcxx():
-    # nvcc requires libstdc++ for its host pass. On any other configuration
-    # (notably the default libc++ platform) cuda targets are skipped as
-    # incompatible instead of failing wildcard builds like //... .
-    return select({
-        "@llvm//runtimes/cxxstdlib:libstdcxx_linux": [],
-        "//conditions:default": ["@platforms//:incompatible"],
-    })

@@ -5,7 +5,7 @@ One nvcc invocation per .cu file. nvcc drives the whole pipeline internally
 is a single Bazel action with the entire nvcc package declared as inputs.
 
 Host-compiler flags are extracted from the resolved cc_toolchain (hermetic-llvm)
-so CUDA objects see the same sysroot/libstdc++/ABI configuration as every other
+so CUDA objects see the same sysroot/standard-library/ABI configuration as every other
 object in the build, and are forwarded via -Xcompiler.
 """
 
@@ -87,6 +87,12 @@ def prepare_cuda_compilation(
     args.add_all(_generate_code_flags(archs))
     args.add_all(cuda_toolchain.compile_args)
 
+    compat_inputs = []
+    if ctx.file.libcxx_overlay:
+        compat_inputs = [ctx.file.libcxx_overlay, ctx.file._libcxx_compat]
+        args.add("-I" + ctx.file.libcxx_overlay.dirname)
+        args.add("--pre-include=" + ctx.file._libcxx_compat.path)
+
     args.add_all(compilation_context.includes, before_each = "-I")
     args.add_all(compilation_context.quote_includes, before_each = "-I")
     args.add_all(compilation_context.system_includes, before_each = "-isystem")
@@ -101,7 +107,7 @@ def prepare_cuda_compilation(
     args.add_all(ctx.attr.ptxasopts, map_each = _quote_tool_option, format_each = "-Xptxas=%s")
 
     inputs = depset(
-        direct = ctx.files.additional_compiler_inputs,
+        direct = ctx.files.additional_compiler_inputs + compat_inputs,
         transitive = [
             compilation_context.headers,
             cuda_toolchain.toolkit_files,

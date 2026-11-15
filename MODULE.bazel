@@ -23,6 +23,9 @@ http_jar(
 )
 
 # Enable hermetic LLVM toolchain
+llvm = use_extension("@llvm//extensions:llvm.bzl", "llvm")
+use_repo(llvm, "llvm-project")
+
 register_toolchains("@llvm//toolchain:all")
 
 # Enable hermetic CUDA toolchain

@@ -1,6 +1,6 @@
 package(default_visibility = ["//visibility:public"])
 
-# CUDA requires libstdc++.
+# Optional libstdc++ configuration; the default platform uses libc++.
 platform(
     name = "linux",
     constraint_values = [
