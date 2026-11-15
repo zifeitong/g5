@@ -67,6 +67,7 @@ def cuda_library(
         hdrs = hdrs,
         textual_hdrs = textual_hdrs,
         deps = deps + CUDA_TOOLKIT_HDRS,
+        additional_compiler_inputs = additional_compiler_inputs,
         includes = includes,
         defines = defines,
         include_prefix = include_prefix,
@@ -95,6 +96,7 @@ def cuda_library(
         deps = [":" + headers_name],
         implementation_deps = implementation_deps,
         additional_compiler_inputs = additional_compiler_inputs,
+        local_defines = local_defines,
         features = features,
         target_compatible_with = compatible_with,
         **kwargs
