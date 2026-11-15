@@ -112,9 +112,8 @@ def prepare_cuda_compilation(
 
 def compile_cuda_object(ctx, cuda_toolchain, compilation, src):
     """Compiles one .cu file to an object file. Returns the object File."""
-    # Package-relative, so same-basename sources in different directories do
-    # not collide without the execroot path being duplicated in the output.
-    relative = src.short_path.removeprefix(ctx.label.package + "/").replace("../", "")
+    # Preserve package paths and keep external repositories in a separate namespace.
+    relative = ("external/" + src.short_path[3:]) if src.short_path.startswith("../") else ("workspace/" + src.short_path)
     obj = ctx.actions.declare_file(
         "_objs/{}/{}.o".format(ctx.label.name, relative.removesuffix(".cu")),
     )
