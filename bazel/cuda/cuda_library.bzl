@@ -13,6 +13,7 @@ def cuda_library(
         srcs = [],
         hdrs = [],
         deps = [],
+        implementation_deps = [],
         includes = [],
         defines = [],
         local_defines = [],
@@ -32,6 +33,7 @@ def cuda_library(
         srcs: .cu sources (compiled by nvcc).
         hdrs: exported headers, visible to srcs and to dependents.
         deps: CcInfo dependencies, visible to srcs and propagated.
+        implementation_deps: CcInfo dependencies visible only to srcs.
         includes: include dirs, relative to this package.
         defines: -D defines for srcs and dependents.
         local_defines: -D defines for srcs only.
@@ -49,7 +51,7 @@ def cuda_library(
         name = objects_name,
         srcs = srcs,
         hdrs = hdrs,
-        deps = deps,
+        deps = deps + implementation_deps,
         includes = includes,
         defines = defines,
         local_defines = local_defines,
@@ -66,6 +68,7 @@ def cuda_library(
         srcs = [":" + objects_name],
         hdrs = hdrs,
         deps = deps + CUDA_TOOLKIT_HDRS,
+        implementation_deps = implementation_deps,
         includes = includes,
         defines = defines,
         alwayslink = alwayslink,
