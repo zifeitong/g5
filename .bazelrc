@@ -8,13 +8,16 @@ common --enable_platform_specific_config
 common:thin_lto --features=thin_lto
 common:thin_lto --copt=-Wno-unused-command-line-argument
 
+# Opt-in libstdc++ instead of the default libc++.
+common:libstdcxx --platforms=//bazel:linux_libstdcxx
+
 # Enable sanitizers.
 common:asan --@llvm//config:asan=true
 common:tsan --@llvm//config:tsan=true
 common:ubsan --@llvm//config:ubsan=true
 
 # Enable TCMalloc if applicable.
-common --custom_malloc=//bazel/malloc:tcmalloc_if_linux_opt
+common --custom_malloc=//bazel:tcmalloc_if_linux_opt
 common:asan --custom_malloc=@bazel_tools//tools/cpp:malloc
 common:tsan --custom_malloc=@bazel_tools//tools/cpp:malloc
 

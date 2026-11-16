@@ -15,3 +15,14 @@ cc_library(
         "//conditions:default": ["@bazel_tools//tools/cpp:malloc"],
     }),
 )
+
+# Enables libstdc++ on Linux.
+platform(
+    name = "linux_libstdcxx",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@llvm//constraints/cxxstdlib:libstdcxx.14.2.0",
+        "@llvm//constraints/libc:gnu.2.28",
+    ],
+    parents = ["@platforms//host"],
+)
