@@ -94,9 +94,13 @@ another, apply this option to both targets (or their shared `cuda_library`):
 copts = ["--static-global-template-stub=false"]
 ```
 
-This permits external template stubs, but also permits the host linker to merge
-matching instantiations from different translation units. Keep the default when
-each translation unit owns its kernel definitions and launches.
+This permits external template stubs, and nvcc documents the cost as a
+correctness problem rather than a linkage detail: the stub gets weak linkage, so
+the host linker keeps one instantiation, while each translation unit still forms
+its own device program with its own copy of the kernel. A launch can therefore
+dispatch into another translation unit's copy. Use it only where the
+instantiations are genuinely identical, and keep the default when each
+translation unit owns its kernel definitions and launches.
 
 CUDA 13 also hides kernel symbols across shared-library boundaries.
 `--device-entity-has-hidden-visibility=false` permits those references; template
