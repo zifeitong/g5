@@ -47,7 +47,6 @@ cuda_toolchain = rule(
             doc = "nvcc's -std for .cu device compilation.",
         ),
         "allow_unsupported_compiler": attr.bool(
-            default = True,
             doc = "Allow host compiler versions newer than nvcc's support matrix.",
         ),
     },

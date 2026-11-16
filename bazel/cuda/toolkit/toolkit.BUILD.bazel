@@ -1,8 +1,5 @@
 # CUDA {CUDA_VERSION}. Generated from bazel/cuda/toolkit/toolkit.BUILD.bazel.
-#
-# Target semantics follow hermeticbuild/cuda-toolkit's per-component BUILD
-# templates, flattened: one repository holding a toolkit-shaped tree rather
-# than one repository per redistributable component.
+# Flat layout; target names follow hermeticbuild/cuda-toolkit.
 
 load("@rules_cc//cc:cc_import.bzl", "cc_import")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
@@ -11,9 +8,7 @@ package(default_visibility = ["//visibility:public"])
 
 exports_files(["bin/nvcc"])
 
-# nvcc.profile resolves cicc, libdevice, the toolkit headers and the link
-# stubs relative to bin/nvcc, so the whole tree has to reach the action
-# sandbox, not just the driver binary.
+# nvcc.profile resolves tools and data relative to the driver; declare the tree.
 filegroup(
     name = "toolkit_files",
     srcs = glob(
@@ -30,8 +25,7 @@ filegroup(
 cc_library(
     name = "headers",
     hdrs = glob(["include/**"]),
-    # CUDA 13 relocated Thrust, CUB and libcu++ under include/cccl. nvcc adds
-    # that directory itself through nvcc.profile; host compiles need it here.
+    # Host compiles need CUDA 13's separate CCCL include directory.
     includes = [
         "include",
         "include/cccl",
@@ -56,8 +50,7 @@ cc_import(
     deps = [":headers"],
 )
 
-# Resolves the driver API at link time without a driver present; libcuda.so.1
-# itself comes from the installed NVIDIA driver at run time.
+# Link-time stub; the installed driver supplies libcuda.so.1 at runtime.
 cc_import(
     name = "cuda_driver_stub",
     interface_library = "lib/stubs/libcuda.so",
@@ -65,15 +58,8 @@ cc_import(
     deps = [":headers"],
 )
 
-# nvcc's own default linkage. Leaves libcuda.so.1 as the binary's only CUDA
-# runtime dependency, so nothing has to stage libcudart.so alongside it.
-#
-# A process must contain exactly one CUDA runtime, and this is the only
-# linkage offered. A binary that also loads an NVIDIA shared library carrying
-# its own DT_NEEDED on libcudart.so, or that dlopens a module linking the
-# runtime itself, would end up with two -- each half getting its own context
-# and allocation bookkeeping, with pointers not crossing between them. That
-# case needs a shared-cudart target here, over lib/libcudart.so.<version>.
+# Static CUDART; the installed driver is still required. Sharing kernel stubs
+# across DSOs needs a consistent runtime (see README).
 cc_library(
     name = "cudart_static",
     linkopts = ["-lrt"],

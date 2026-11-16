@@ -53,7 +53,7 @@ def cuda_library(
     kwargs.setdefault("linkstatic", True)
     compatible_with = target_compatible_with + ["@platforms//os:linux"]
     private_kwargs = dict(
-        {k: v for k, v in kwargs.items() if k in ["tags", "testonly"]},
+        {k: v for k, v in kwargs.items() if k in ["exec_properties", "tags", "testonly"]},
         features = features,
         target_compatible_with = compatible_with,
         visibility = ["//visibility:private"],

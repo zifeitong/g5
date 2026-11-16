@@ -1,13 +1,4 @@
-"""The nvcc compile action.
-
-One nvcc invocation per .cu file. nvcc drives the whole pipeline internally
-(host preprocess via -ccbin clang, cudafe++, cicc, ptxas, fatbinary), so this
-is a single Bazel action with the entire nvcc package declared as inputs.
-
-Host-compiler flags are extracted from the resolved cc_toolchain (hermetic-llvm)
-so CUDA objects see the same sysroot/standard-library/ABI configuration as every other
-object in the build, and are forwarded via -Xcompiler.
-"""
+"""One nvcc action per .cu, with host flags from the resolved C++ toolchain."""
 
 load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
@@ -56,9 +47,7 @@ def _generate_code_flags(archs):
     return flags
 
 def _quote_tool_option(flag):
-    # nvcc splits a comma-separated list and unquotes twice before the tool
-    # sees the argument, so escape for both passes. Verified: one pass loses
-    # the quotes in -DMSG="hi" entirely.
+    # nvcc splits comma-separated options and unquotes twice; escape both passes.
     for _ in range(2):
         flag = flag.replace("\\", "\\\\").replace('"', '\\"')
     return '"' + flag + '"'
@@ -79,7 +68,6 @@ def prepare_cuda_compilation(
 
     args = ctx.actions.args()
 
-    # One flat toolkit tree, so nvcc.profile finds cicc, libdevice and headers.
     args.add("-ccbin=" + host_compiler)
     args.add("-std=" + cuda_toolchain.cuda_std)
     if cuda_toolchain.allow_unsupported_compiler:
@@ -92,7 +80,12 @@ def prepare_cuda_compilation(
     args.add_all(compilation_context.system_includes, before_each = "-isystem")
     args.add_all(compilation_context.external_includes, before_each = "-isystem")
     args.add_all(compilation_context.defines, before_each = "-D")
-    args.add_all(ctx.attr.local_defines, before_each = "-D")
+    for define in ctx.attr.local_defines:
+        expanded = ctx.expand_location(define, targets = ctx.attr.additional_compiler_inputs)
+        tokens = ctx.tokenize(ctx.expand_make_variables("local_defines", expanded, {}))
+        if len(tokens) != 1:
+            fail("local_defines entry must expand to one token: " + define)
+        args.add("-D", tokens[0])
 
     args.add_all(host_flags, map_each = _quote_tool_option, format_each = "-Xcompiler=%s")
 

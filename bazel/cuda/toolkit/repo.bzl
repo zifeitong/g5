@@ -1,33 +1,19 @@
-"""Downloads the pinned CUDA toolkit components into one flat tree.
+"""Downloads pinned CUDA components into one toolkit-shaped tree.
 
-The release label is pinned together with the sha256 of NVIDIA's manifest for
-it; the manifest then supplies each component's version, path and hash.
-Pinning the manifest is what keeps this hermetic -- without it NVIDIA could
-republish redistrib_<label>.json and the components would change underneath a
-fixed label.
-
-Everything extracts at the repository root, so the result mirrors a normal
-toolkit install and bin/nvcc.profile resolves cicc, libdevice, the toolkit
-headers and the stub libraries on its own.
+The manifest hash pins component versions and hashes. The flat layout lets
+nvcc.profile resolve tools, headers, and libdevice relative to the driver.
 """
 
-# Bump: set CUDA_VERSION, then replace _MANIFEST_SHA256 with the sha256 of
-# that release's manifest. See "Bumping CUDA" in ../README.md.
-#
-# The hash alone does not keep these two honest. Bazel's repository cache is
-# content-addressed, so a URL naming one release paired with another release's
-# hash is served from cache without a download, and the build silently
-# reports the version in CUDA_VERSION while containing the other release's
-# components. The impl therefore checks CUDA_VERSION against the label the
-# manifest states about itself.
+# Update the release and manifest hash together; see README's "Bumping CUDA".
+# Check release_label too: a content-addressed cache can serve an old manifest
+# when a new URL is accidentally paired with the old hash.
 CUDA_VERSION = "13.5.0"
 
 _BASE_URL = "https://developer.download.nvidia.com/compute/cuda/redist/"
 _MANIFEST_URL = "{}redistrib_{}.json".format(_BASE_URL, CUDA_VERSION)
 _MANIFEST_SHA256 = "401529e951b845788177f999c0756c520c4d0db1cd4cd05c0a295e331884b596"
 
-# Follows the host, which the toolchains require to match the target. "sbsa"
-# is NVIDIA's aarch64 server build; rctx.os.arch is Java's, hence amd64.
+# Native Linux archives; rctx.os.arch uses Java's architecture names.
 _PLATFORMS = {"amd64": "linux-x86_64", "aarch64": "linux-sbsa"}
 _MANIFEST = "redistrib.json"
 
@@ -37,10 +23,9 @@ _COMPONENTS = [
     "cuda_cudart",
     "cuda_nvcc",
     "cuda_profiler_api",
-    # libculibos.a, needed by the static runtime. Its own component since
-    # CUDA 13; before that it shipped inside cuda_cudart.
+    # Static runtime support, separate from cuda_cudart since CUDA 13.
     "cuda_culibos",
-    # cicc, the device compiler itself, plus libdevice bitcode.
+    # cicc and libdevice.
     "libnvvm",
 ]
 
@@ -70,8 +55,7 @@ def _cuda_toolkit_repository_impl(rctx):
         if platform not in component:
             fail("{} has no {} build in CUDA {}".format(name, platform, CUDA_VERSION))
 
-        # Every component NVIDIA publishes uses its archive's basename, minus
-        # the .tar.xz suffix, as the single top-level directory inside it.
+        # Each archive wraps the toolkit files in a directory named after itself.
         relative_path = component[platform]["relative_path"]
         rctx.download_and_extract(
             url = _BASE_URL + relative_path,

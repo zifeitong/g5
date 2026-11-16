@@ -1,8 +1,4 @@
-"""The nvcc rule behind cuda_library: one .o per .cu, nothing else.
-
-Reads compilation contexts from dependencies and the private header library.
-The wrapping cc_library owns archiving, linking and header export.
-"""
+"""Compiles .cu files; cc_library handles headers, archiving, and linking."""
 
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
@@ -14,12 +10,11 @@ visibility(["//bazel/cuda/..."])
 
 CUDA_TOOLCHAIN_TYPE = "//bazel/cuda/toolchain:toolchain_type"
 
-# Toolkit headers implicitly visible to every cuda_library, on both the nvcc
-# side (via the toolchain's headers attr) and the exported cc_library side.
+# Export toolkit headers to native C++ consumers as well as CUDA sources.
 CUDA_TOOLKIT_HDRS = [Label("@cuda_toolkit//:headers")]
 
 def _merged_compilation_inputs(ctx, toolkit_header_targets):
-    """Read-only merge of dep/toolkit compilation contexts."""
+    """Merge dependency and toolkit compilation contexts."""
     return cc_common.merge_compilation_contexts(
         compilation_contexts = [
             dep[CcInfo].compilation_context
