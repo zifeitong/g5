@@ -128,14 +128,12 @@ Revalidate standard-library compatibility when updating LLVM or CUDA.
 - CUDA 13.5.0 is pinned in `toolkit/repo.bzl`. `cuda_std`, a toolchain
   attribute defaulting to `c++23`, is the device dialect nvcc is told to use.
   The host dialect comes from the cc toolchain and the global
-  `--copt`/`--cxxopt` -- `.bazelrc` sets `-std=c++23` -- so the two are
-  independent: a global `-std` moves the host pass and leaves the device pass
-  alone. Precedence for the host dialect, lowest first: cc toolchain, global
-  flags, `host_std`, `host_copts`. `host_std` is empty by default and exists
-  to hold nvcc to an older dialect than the rest of the repo: CUDA 13.4.3
-  needed host C++17 to avoid libstdc++'s `__builtin_clear_padding` failure in
-  `<atomic>` and Thrust, which would otherwise have meant dropping every
-  target to C++17. CUDA 13.5 passes those probes at C++20 and C++23.
+  `--copt`/`--cxxopt` -- `.bazelrc` sets `-std=c++23` -- and `host_copts`
+  overrides it per target. The two are not independent: nvcc preprocesses
+  with the host compiler before cicc, so the host `-std` also decides which
+  standard-library code the device frontend sees. That is why an older host
+  dialect is not a free lever -- on libc++ anything below `c++23` fails in
+  the device pass on `std::signbit`.
 - Binaries linked through `@cuda_toolkit//:cudart_static` need an NVIDIA
   driver: without `libcuda.so.1` the loader fails before `main`. Host-only
   checks can omit the driver dependency; GPU execution still needs it.

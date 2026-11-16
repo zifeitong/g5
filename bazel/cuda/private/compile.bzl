@@ -96,11 +96,6 @@ def prepare_cuda_compilation(
 
     args.add_all(host_flags, map_each = _quote_tool_option, format_each = "-Xcompiler=%s")
 
-    # After host_flags so it beats the cc toolchain and --copt/--cxxopt, before
-    # host_copts so a target still wins. Opt-in: empty adds nothing.
-    if cuda_toolchain.host_std:
-        args.add("-Xcompiler=-std=" + cuda_toolchain.host_std)
-
     args.add_all(ctx.attr.copts)
     args.add_all(ctx.attr.host_copts, map_each = _quote_tool_option, format_each = "-Xcompiler=%s")
     args.add_all(ctx.attr.ptxasopts, map_each = _quote_tool_option, format_each = "-Xptxas=%s")
