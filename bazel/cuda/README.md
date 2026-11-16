@@ -126,4 +126,3 @@ standard-library compatibility when updating CUDA or LLVM.
 - `toolchain/`: nvcc configuration and toolchain registration.
 - `toolkit/`: pinned components extracted into one toolkit-shaped tree,
   plus headers, static runtime, and driver-stub targets.
-- `platforms/`: optional libstdc++ platform.
