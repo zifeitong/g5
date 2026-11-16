@@ -69,13 +69,43 @@ whole build. Do not mix objects built against the two standard libraries in
 one binary.
 
 LLVM 22.1.8 is selected in `MODULE.bazel` for both the compiler and its
-runtimes. C++23 is the supported dialect for CUDA and host compilation. With
-CUDA 13.5, our libc++ C++23 probes pass without compatibility headers or
-patched standard-library headers. CUDA targets require Linux.
+runtimes. C++23 is the supported dialect for CUDA and host compilation.
+CUDA targets require Linux.
 
-Older dialects are not covered by compatibility shims: libc++ C++17/20
+nvcc pre-includes `private/bit_cast.h` to annotate `std::bit_cast` for device
+use with both standard libraries. Even in C++23, a specialization returning a
+non-literal, trivially copyable type (such as Eigen's half type) loses device-call
+eligibility under nvcc's relaxed constexpr handling. The pre-include redeclares
+the existing templates with `__host__ __device__`; their implementations come
+from the standard-library headers. The approach follows
+[rules_ml_toolchain](https://github.com/google-ml-infra/rules_ml_toolchain/blob/9ff8598c6dfa182f4fd49f9af761c67bc2e50abd/gpu/cuda/clang/clang_cuda_runtime_wrapper.h).
+
+Older dialects have additional compatibility requirements: libc++ C++17/20
 requires additional annotations for device-side `std::signbit` calls.
 Revalidate standard-library compatibility when updating LLVM or CUDA.
+
+## Kernel linkage
+
+CUDA 13 gives template kernel host stubs internal linkage by default. If a
+kernel template is explicitly instantiated in one `.cu` file and launched from
+another, apply this option to both targets (or their shared `cuda_library`):
+
+```starlark
+copts = ["--static-global-template-stub=false"]
+```
+
+This permits external template stubs, but also permits the host linker to merge
+matching instantiations from different translation units. Keep the default when
+each translation unit owns its kernel definitions and launches.
+
+CUDA 13 also hides kernel symbols across shared-library boundaries.
+`--device-entity-has-hidden-visibility=false` permits those references; template
+kernels crossing that boundary need both options. The calling code and kernel
+library must use the same CUDA runtime. Our linkage probes use one shared
+CUDART; the public `cudart_static` target does not provide that setup. Exporting
+a host launch function from the kernel library avoids exposing the kernel stub.
+These options control host stub linkage and visibility; they do not add RDC or
+device linking.
 
 ## Layout
 
@@ -105,6 +135,7 @@ Revalidate standard-library compatibility when updating LLVM or CUDA.
   `cc_library` owns header export, archiving and linking.
 - `BUILD.bazel` — the architecture list flag, using bazel-skylib's
   `string_list_flag` and `BuildSettingInfo`.
+- `private/bit_cast.h` — nvcc-only device annotations for standard bit_cast.
 - `platforms/` — the optional libstdc++ platform for CUDA builds.
 
 ## Known limitations

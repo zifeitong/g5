@@ -1,0 +1,4 @@
+exports_files(
+    ["bit_cast.h"],
+    visibility = ["//bazel/cuda:__subpackages__"],
+)
