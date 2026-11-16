@@ -1,4 +1,0 @@
-exports_files(
-    ["libcxx_compat.h"],
-    visibility = ["//bazel/cuda:__subpackages__"],
-)

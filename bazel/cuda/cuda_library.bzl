@@ -77,10 +77,6 @@ def cuda_library(
     cuda_objects(
         name = objects_name,
         srcs = srcs,
-        libcxx_compat = select({
-            "@llvm//runtimes/cxxstdlib:libcxx_linux": "//bazel/cuda/private:libcxx_compat.h",
-            "//conditions:default": None,
-        }),
         deps = [":" + headers_name] + implementation_deps,
         additional_compiler_inputs = additional_compiler_inputs,
         local_defines = local_defines,

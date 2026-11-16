@@ -69,15 +69,13 @@ whole build. Do not mix objects built against the two standard libraries in
 one binary.
 
 LLVM 22.1.8 is selected in `MODULE.bazel` for both the compiler and its
-runtimes. With CUDA 13.5, our libc++ probes need only an nvcc pre-include
-annotating its signbit templates for device use in C++17/20. C++23 passes that probe without
-the annotations, but shares the same compatibility header.
+runtimes. C++23 is the supported dialect for CUDA and host compilation. With
+CUDA 13.5, our libc++ C++23 probes pass without compatibility headers or
+patched standard-library headers. CUDA targets require Linux.
 
-Unlike libc++ 23.1.2, this version needs no tuple-header overlay, mutex
-capability-attribute macros, or definitions for CUDA's non-template signbit
-overloads. Native C++ compilation uses the original headers. libstdc++ gets no
-compatibility header. Revalidate the remaining workaround when updating LLVM
-or CUDA; the pre-include checks the libc++ version. CUDA targets require Linux.
+Older dialects are not covered by compatibility shims: libc++ C++17/20
+requires additional annotations for device-side `std::signbit` calls.
+Revalidate standard-library compatibility when updating LLVM or CUDA.
 
 ## Layout
 
@@ -107,7 +105,6 @@ or CUDA; the pre-include checks the libc++ version. CUDA targets require Linux.
   `cc_library` owns header export, archiving and linking.
 - `BUILD.bazel` — the architecture list flag, using bazel-skylib's
   `string_list_flag` and `BuildSettingInfo`.
-- `private/libcxx_compat.h` — nvcc-only libc++ signbit annotations.
 - `platforms/` — the optional libstdc++ platform for CUDA builds.
 
 ## Known limitations

@@ -87,9 +87,6 @@ def prepare_cuda_compilation(
     args.add_all(_generate_code_flags(archs))
     args.add_all(cuda_toolchain.compile_args)
 
-    if ctx.file.libcxx_compat:
-        args.add("--pre-include=" + ctx.file.libcxx_compat.path)
-
     args.add_all(compilation_context.includes, before_each = "-I")
     args.add_all(compilation_context.quote_includes, before_each = "-I")
     args.add_all(compilation_context.system_includes, before_each = "-isystem")
@@ -109,7 +106,7 @@ def prepare_cuda_compilation(
     args.add_all(ctx.attr.ptxasopts, map_each = _quote_tool_option, format_each = "-Xptxas=%s")
 
     inputs = depset(
-        direct = ctx.files.additional_compiler_inputs + ctx.files.libcxx_compat,
+        direct = ctx.files.additional_compiler_inputs,
         transitive = [
             compilation_context.headers,
             cuda_toolchain.toolkit_files,
