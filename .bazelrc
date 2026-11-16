@@ -15,7 +15,7 @@ common:thin_lto --copt=-Wno-unused-command-line-argument
 common:libstdcxx --platforms=//bazel:platform_linux_libstdcxx
 
 # Select the optional libstdc++ platform for CUDA and C++ builds.
-common:cuda --platforms=//bazel/cuda/platforms:linux
+common:libstdcxx --platforms=//bazel/cuda/platforms:linux
 
 # Enable sanitizers.
 common:asan --@llvm//config:asan=true

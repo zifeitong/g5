@@ -63,22 +63,14 @@ is not published for the host's platform.
 
 ## C++ standard library
 
-CUDA builds use the default libc++ platform. `--config=cuda` remains available
-for libstdc++ (GCC 14.2); it selects `//bazel/cuda/platforms:linux` for the
+CUDA builds use the default libc++ platform. `--config=libstdcxx` opts into
+libstdc++ (GCC 14.2); it selects `//bazel/cuda/platforms:linux` for the
 whole build. Do not mix objects built against the two standard libraries in
 one binary.
 
 LLVM 22.1.8 is selected in `MODULE.bazel` for both the compiler and its
 runtimes. C++23 is the supported dialect for CUDA and host compilation.
 CUDA targets require Linux.
-
-nvcc pre-includes `private/bit_cast.h` to annotate `std::bit_cast` for device
-use with both standard libraries. Even in C++23, a specialization returning a
-non-literal, trivially copyable type (such as Eigen's half type) loses device-call
-eligibility under nvcc's relaxed constexpr handling. The pre-include redeclares
-the existing templates with `__host__ __device__`; their implementations come
-from the standard-library headers. The approach follows
-[rules_ml_toolchain](https://github.com/google-ml-infra/rules_ml_toolchain/blob/9ff8598c6dfa182f4fd49f9af761c67bc2e50abd/gpu/cuda/clang/clang_cuda_runtime_wrapper.h).
 
 Older dialects have additional compatibility requirements: libc++ C++17/20
 requires additional annotations for device-side `std::signbit` calls.
@@ -139,10 +131,33 @@ device linking.
   `cc_library` owns header export, archiving and linking.
 - `BUILD.bazel` — the architecture list flag, using bazel-skylib's
   `string_list_flag` and `BuildSettingInfo`.
-- `private/bit_cast.h` — nvcc-only device annotations for standard bit_cast.
 - `platforms/` — the optional libstdc++ platform for CUDA builds.
 
 ## Known limitations
+
+### Device-side std::bit_cast
+
+With CUDA 13.5.37 and Clang 22.1.8, device-side `std::bit_cast` can generate
+incorrect code when returning a non-literal, trivially copyable type, such as
+an Eigen-like half type with non-constexpr constructors. We reproduced this
+with both libc++ 22.1.8 and libstdc++ 14.2 in C++23: nvcc emitted warnings
+`20011` and `20014`, but compilation succeeded and the kernel's expected
+load/XOR/store became only `ret` in PTX. The toolkit applies no automatic shim.
+
+Use `cuda::std::bit_cast` or `__builtin_bit_cast` in affected device code, or
+provide a targeted host/device annotation pre-include as demonstrated by
+[rules_ml_toolchain](https://github.com/google-ml-infra/rules_ml_toolchain/blob/9ff8598c6dfa182f4fd49f9af761c67bc2e50abd/gpu/cuda/clang/clang_cuda_runtime_wrapper.h).
+To reject invalid host/device calls for a target, use:
+
+```starlark
+copts = ["--diag-error=20011", "--diag-error=20014"]
+```
+
+These diagnostics cover other host/device calls too and can be noisy in generic
+code. Library pragmas or warning suppression can hide them; successful
+compilation alone does not establish correct device code.
+
+### Other limitations
 
 - With libstdc++ 14.2, nvcc 13.5 rejects `std::tuple{...}` class template
   argument deduction in C++20/23. Explicit tuple types work; libc++ passes

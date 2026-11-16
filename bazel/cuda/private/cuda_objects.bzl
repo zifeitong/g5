@@ -63,11 +63,6 @@ cuda_objects = rule(
         "host_copts": attr.string_list(),
         "ptxasopts": attr.string_list(),
         "archs": attr.string_list(),
-        "_bit_cast": attr.label(
-            default = Label("//bazel/cuda/private:bit_cast.h"),
-            allow_single_file = True,
-            doc = "nvcc pre-include making standard bit_cast device-callable.",
-        ),
         "_default_archs": attr.label(
             default = Label("//bazel/cuda:archs"),
             providers = [BuildSettingInfo],
