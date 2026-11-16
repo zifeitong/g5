@@ -36,11 +36,21 @@ Set architectures with `--//bazel/cuda:archs=sm_90a,compute_90` or the target's
 Use `copts` for nvcc flags, `host_copts` for `-Xcompiler`, and `ptxasopts`
 for `-Xptxas`. Global `--copt` and `--cxxopt` flags also go through `-Xcompiler`.
 
-Headers, include prefixes, defines, dependencies, compiler inputs, and features
-are explicit attributes documented in `cuda_library.bzl`. `implementation_deps`
-is private to compilation. Remaining `cc_library` options are forwarded;
-`linkstatic` defaults to `True`. Execution properties apply to compilation and
-archiving.
+Attribute routing is explicit:
+
+| Attributes | Apply to |
+| --- | --- |
+| `copts`, `host_copts`, `ptxasopts`, `local_defines`, compiler inputs | CUDA compilation |
+| Headers, include prefixes, `includes`, `defines`, `deps` | CUDA compilation and consumers |
+| `implementation_deps` | Private compilation dependencies and final linking |
+| Features, target compatibility, `exec_compatible_with`, `exec_properties`, tags, `testonly`, Make-variable `toolchains` | All generated targets |
+| Remaining `cc_library` kwargs, including link options and `alwayslink` | Final `cc_library` |
+
+`linkstatic` defaults to `True`. Kwargs do not automatically configure nvcc.
+`cxxopts` is rejected; use `host_copts` or `copts`. `local_includes` is rejected;
+use `implementation_deps` for private header/include dependencies.
+`exec_group_compatible_with` uses native C++ exec-group names and applies only
+to the final library; use `exec_compatible_with` to constrain CUDA execution.
 
 `cuda_std` in the CUDA toolchain selects nvcc's dialect. The C++ toolchain and
 global flags select the host dialect, with per-target overrides in `host_copts`.
@@ -63,7 +73,8 @@ kernel. Use this only for identical instantiations; otherwise keep the default.
 Cross-library kernel references also need
 `--device-entity-has-hidden-visibility=false`; template kernels need both flags.
 Calling code and kernel stubs must share the CUDA runtime. Our probes use one
-shared CUDART, which the public `cudart_static` target does not provide. Export a host launch function to keep kernel stubs private.
+shared CUDART, which the public `cudart_static` target does not provide. Export a
+host launch function to keep kernel stubs private.
 These flags do not add device linking.
 
 ## Limitations

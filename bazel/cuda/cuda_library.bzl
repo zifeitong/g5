@@ -48,12 +48,27 @@ def cuda_library(
         archs: CUDA archs; defaults to --//bazel/cuda:archs.
         features: toolchain features for CUDA and C++ actions.
         target_compatible_with: additional target platform constraints.
-        **kwargs: remaining cc_library attributes; linkstatic defaults to True.
+        **kwargs: remaining attributes configure the final cc_library.
+            exec_compatible_with, exec_properties, tags, testonly, and Make-variable
+            toolchains also apply to private targets. cxxopts and local_includes
+            are unsupported; use host_copts and implementation_deps respectively.
+            linkstatic defaults to True.
     """
+    for attr, replacement in {
+        "cxxopts": "host_copts for host compiler options, or copts for nvcc options",
+        "local_includes": "implementation_deps for private header/include dependencies",
+    }.items():
+        if attr in kwargs:
+            fail("cuda_library does not support {}; use {}".format(attr, replacement))
+
     kwargs.setdefault("linkstatic", True)
     compatible_with = target_compatible_with + ["@platforms//os:linux"]
     private_kwargs = dict(
-        {k: v for k, v in kwargs.items() if k in ["exec_properties", "tags", "testonly"]},
+        {
+            k: v
+            for k, v in kwargs.items()
+            if k in ["exec_compatible_with", "exec_properties", "tags", "testonly", "toolchains"]
+        },
         features = features,
         target_compatible_with = compatible_with,
         visibility = ["//visibility:private"],
