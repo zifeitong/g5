@@ -16,13 +16,21 @@ cc_library(
     }),
 )
 
-# Enables libstdc++ on Linux.
+# Set the target glibc version.
 platform(
-    name = "linux_libstdcxx",
+    name = "platform_linux",
     constraint_values = [
         "@platforms//os:linux",
-        "@llvm//constraints/cxxstdlib:libstdcxx.14.2.0",
-        "@llvm//constraints/libc:gnu.2.28",
+        "@llvm//constraints/libc:gnu.2.43",
     ],
     parents = ["@platforms//host"],
+)
+
+# Enables libstdc++ on Linux.
+platform(
+    name = "platform_linux_libstdcxx",
+    constraint_values = [
+        "@llvm//constraints/cxxstdlib:libstdcxx.16.1.0",
+    ],
+    parents = [":platform_linux"],
 )
