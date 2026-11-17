@@ -27,8 +27,9 @@ cc_binary(
 bazel build //path/to:app
 ```
 
-libc++ is the default. `--config=libstdcxx` selects libstdc++ 14.2 for the
-whole build; keep the standard library consistent across linked objects.
+The project targets glibc 2.43 (Ubuntu 26.04 LTS), including build tools.
+libc++ is the default. `--config=libstdcxx` selects libstdc++ 16.1.0.
+Keep the standard library consistent across linked objects.
 CUDA targets are incompatible with Windows and macOS.
 
 Set architectures with `--//bazel/cuda:archs=sm_90a,compute_90` or the target's
@@ -82,8 +83,6 @@ These flags do not add device linking.
 - No RDC, device linking, DLTO, cross-compilation, or clang-CUDA mode.
 - libc++ C++17/20 needs additional device annotations for `std::signbit`;
   C++23 is the supported dialect.
-- nvcc 13.5 with libstdc++ 14.2 rejects tuple argument deduction
-  (`std::tuple{...}`) in C++20/23. Use explicit tuple types.
 - `cudart_static` requires the installed driver's `libcuda.so.1` at process
   startup. Builds and host-only probes can run without a GPU.
 
