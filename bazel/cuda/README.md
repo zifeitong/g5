@@ -27,7 +27,7 @@ cc_binary(
 bazel build //path/to:app
 ```
 
-The project targets glibc 2.43 (Ubuntu 26.04 LTS), including build tools.
+On Linux, the project targets glibc 2.43 (Ubuntu 26.04 LTS), including build tools.
 libc++ is the default. `--config=libstdcxx` selects libstdc++ 16.1.0.
 Keep the standard library consistent across linked objects.
 CUDA targets are incompatible with Windows and macOS.
